@@ -2,12 +2,12 @@
 let map = undefined;
 let threshold = 0;
 let showSingletons = true;
-
 let defaultStyle = {
     "weight" : 0.5,
     "fillOpacity" : 1.0,
     "radius" : 5
 };
+let infectedNodes = {};
 
 //
 let clusterColorScale = d3.scaleOrdinal().domain(d3.range(11)).range(['#8dd3c7','#ffffb3','#fb8072','#80b1d3','#fdb462','#b3de69','#fccde5','#d9d9d9','#bc80bd','#ccebc5','#ffed6f']);
@@ -78,6 +78,16 @@ function updateLinks(){
 	if(origin != destination){
 	    if(edges[key] > threshold){
 		//
+		let clusterInfected = cityMarkers[origin].options.clusterInfected;
+		if(clusterInfected){
+		    line.options.color = "red";
+		}
+		else{
+		    debugger
+		    line.options.color = "green";
+		}
+		//
+		line.removeFrom(map);
 		line.addTo(map);
 	    }
 	    else{
@@ -172,21 +182,31 @@ function updateGroupIds(){
 	}
     });
 
-    //console.log(adjList);
-    //console.log(connectedComponents(adjList))
+    //
     let ccs = connectedComponents(adjList);
     let count = 0;
     ccs.forEach(cc=>{
 	if(cc.length > 1){
+	    //not singleton
 	    let color = clusterColorScale(count%11);
+	    //
+	    let clusterInfected = false;
 	    cc.forEach(index=>{
 		let name = mapIndexCity[index];
 		cityMarkers[name].options.fillColor = color;
 		cityMarkers[name].options.singleton = false;
+		clusterInfected = clusterInfected || cityMarkers[name].options.infected;
 		//
-		cityMarkers[name].removeFrom(map);
-		cityMarkers[name].addTo(map);
+                cityMarkers[name].removeFrom(map);
+                cityMarkers[name].addTo(map);
 	    });
+	    //
+	    cc.forEach(index=>{
+		let name = mapIndexCity[index];
+		cityMarkers[name].options.clusterInfected = clusterInfected;
+	    });
+	    
+	    //
 	    count += 1;
 	}
 	else{
@@ -209,6 +229,7 @@ function updateThreshold() {
 }
 
 function buildCoords(){
+
     
     //
     cityNodes = graphCities.cities.map(city=>{
@@ -248,7 +269,12 @@ function buildCoords(){
 		fillOpacity: defaultStyle.fillOpacity,
 		radius: defaultStyle.radius
 	    });
-	    circle.options.singleton = false;	    
+	    circle.options.singleton = false; 
+	    console.log(city.estimated_active_cases);
+	    
+	    circle.bindPopup('Nome: ' + city.name + '</br>' + 'Estimativa de Casos Ativos: ' + city.estimated_active_cases);
+	    circle.options.infected = (city.estimated_active_cases > 0);
+	    circle.options.clusterInfected = true;
 	    cityMarkers[city.name] = circle;
 
 	}
@@ -266,7 +292,7 @@ function buildCoords(){
 	if(origin != destination && edges[key] > 0){
 	    //
 	    let latlngs = [coords[origin],coords[destination]];
-	    let line = L.polyline(latlngs, {color: 'red',weight:5*opacityScale(edges[key])+1});
+	    let line = L.polyline(latlngs, {color: '#A0A0A0',weight:10*opacityScale(edges[key])+1});
 	    lines[key] = line;
 	}
     }
