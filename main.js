@@ -6,7 +6,7 @@ let showSingletons = true;
 let defaultStyle = {
     "weight" : 0.5,
     "fillOpacity" : 1.0,
-    "radius" : 3
+    "radius" : 5
 };
 
 //
@@ -57,10 +57,12 @@ function updateNodes(){
 	    }
 	    else{
 		circle.addTo(map);
+		circle.bringToFront();
 	    }
 	}
 	else{
 	    circle.addTo(map);
+	    circle.bringToFront();
 	}
     });
 }
