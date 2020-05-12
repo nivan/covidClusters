@@ -104,7 +104,7 @@ function loadInterface(){
 
 
     //////// MAP
-    map = L.map('map').setView([-8.042232671243832, -34.91455078125001], 12);
+    map = L.map('map').setView([-8.716788630258742,-38.1500244140625], 8);
 
     var Stadia_AlidadeSmooth = L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png', {
 	maxZoom: 20,
