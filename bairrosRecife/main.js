@@ -52,7 +52,7 @@ sem_acento = "AAAAAAACEEEEIIIIDNOOOOOOUUUUYRsBaaaaaaaceeeeiiiionoooooouuuuybyr";
 
 
 function updateNodes(){
-    graphCities.cities.forEach(city=>{
+    graphBairros.cities.forEach(city=>{
 	var circle = cityMarkers[city.name];
 	if(!showSingletons){
 	    if(circle.options.singleton){
@@ -112,7 +112,7 @@ function loadInterface(){
     });
 
     //////// MAP
-    map = L.map('map').setView([-8.716788630258742,-38.1500244140625], 8);
+    map = L.map('map').setView([-8.0735065185462, -34.85000610351563], 11);
 
     var Stadia_AlidadeSmooth = L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png', {
 	maxZoom: 20,
@@ -251,14 +251,14 @@ function buildCoords(){
 
     
     //
-    cityNodes = graphCities.cities.map(city=>{
+    cityNodes = graphBairros.cities.map(city=>{
 	return {"id":city.name,"group":0};
     });
 
     edges = {};
     //
-    graphCities.cities.forEach(city=>{
-	coords[city.name] = [-city.lat,city["long"]];
+    graphBairros.cities.forEach(city=>{
+	coords[city.name] = [city.lat,city["long"]];
 	
 	for(let i in city.edge_weights){
 	    //
@@ -278,8 +278,8 @@ function buildCoords(){
     });
 
     //
-    graphCities.cities.forEach(city=>{
-	let coords = [-city.lat,city['long']];
+    graphBairros.cities.forEach(city=>{
+	let coords = [city.lat,city['long']];
 	if(coords != undefined){
 	    var circle = L.circleMarker(coords,{
 		color: 'black',
