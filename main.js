@@ -2,6 +2,7 @@
 let map = undefined;
 let threshold = 0;
 let showSingletons = true;
+let showPolygons = false;
 let defaultStyle = {
     "weight" : 0.5,
     "fillOpacity" : 1.0,
@@ -18,11 +19,13 @@ let coords    = {}; // name -> [latitude,longitude]
 //
 let edges = {};     // n1_n2 -> weight
 let cityLinks = []; // [{"source", "target", "value"}]
+//
+let clusterPolygons = [];
 
 //markers
 let cityMarkers = {}; // name -> marker
 let lines       = {}; // n1_n2-> lineMarker
-
+let polygons    = [];
 
 function retira_acentos(str) 
 {
@@ -56,11 +59,13 @@ function updateNodes(){
 		circle.removeFrom(map);
 	    }
 	    else{
+		circle.removeFrom(map);
 		circle.addTo(map);
 		circle.bringToFront();
 	    }
 	}
 	else{
+	    circle.removeFrom(map);
 	    circle.addTo(map);
 	    circle.bringToFront();
 	}
@@ -70,29 +75,18 @@ function updateNodes(){
 function updateLinks(){
     //add lines
     let opacityScale = d3.scaleLinear().domain([0,100]).range([0,1]);
-    for(let key in edges){
-	let x = key.indexOf("_");
-	let origin = key.slice(0,x);
-	let destination = key.slice(x+1);
+    for(let key in lines){
 	let line = lines[key];
-	if(origin != destination){
-	    if(edges[key] > threshold){
-		//
-		let clusterInfected = cityMarkers[origin].options.clusterInfected;
-		if(clusterInfected){
-		    line.options.color = "red";
-		}
-		else{
-		    debugger
-		    line.options.color = "green";
-		}
-		//
-		line.removeFrom(map);
-		line.addTo(map);
-	    }
-	    else{
-		line.removeFrom(map);
-	    }
+	if(line.options.value > threshold){
+	    //
+	    //let clusterInfected = cityMarkers[origin].options.clusterInfected;
+	    line.options.color = "gray";
+	    //
+	    line.removeFrom(map);
+	    line.addTo(map);
+	}
+	else{
+	    line.removeFrom(map);
 	}
     }
 }
@@ -112,6 +106,10 @@ function loadInterface(){
 	updateThreshold();
     });
 
+    d3.select("#polygonsCB").on("change",function(v){
+	showPolygons = this.checked;
+	updateThreshold();
+    });
 
     //////// MAP
     map = L.map('map').setView([-8.716788630258742,-38.1500244140625], 8);
@@ -122,30 +120,29 @@ function loadInterface(){
     }).addTo(map);
     
 
-    updateLinks();
-    updateNodes();
+    updateThreshold();
     
 }
 
 function connectedComponents(adj) {
-  var numVertices = adj.length
-  var visited = new Array(numVertices)
-  for(var i=0; i<numVertices; ++i) {
+  let numVertices = adj.length
+  let visited = new Array(numVertices)
+  for(let i=0; i<numVertices; ++i) {
     visited[i] = false
   }
-  var components = []
-  for(var i=0; i<numVertices; ++i) {
+  let components = []
+  for(let i=0; i<numVertices; ++i) {
     if(visited[i]) {
       continue
     }
-    var toVisit = [i]
-    var cc = [i]
+    let toVisit = [i]
+    let cc = [i]
     visited[i] = true
     while(toVisit.length > 0) {
-      var v = toVisit.pop()
-      var nbhd = adj[v]
-      for(var j=0; j<nbhd.length; ++j) {
-        var u = nbhd[j]
+      let v = toVisit.pop()
+      let nbhd = adj[v]
+      for(let j=0; j<nbhd.length; ++j) {
+        let u = nbhd[j]
         if(!visited[u]) {
           visited[u] = true
           toVisit.push(u)
@@ -183,23 +180,47 @@ function updateGroupIds(){
     });
 
     //
+    clusterPolygons.forEach(pol=>{
+	pol.removeFrom(map);
+    });
+    clusterPolygons = [];
+    
+    //
     let ccs = connectedComponents(adjList);
     let count = 0;
     ccs.forEach(cc=>{
-	if(cc.length > 1){
-	    //not singleton
-	    let color = clusterColorScale(count%11);
-	    //
+	if(cc.length > 1){ //not singleton
+	    //update cluster
+	    let color = clusterColorScale(d3.min(cc)%11);
 	    let clusterInfected = false;
+ 	    let clusterPoints = [];
+
 	    cc.forEach(index=>{
 		let name = mapIndexCity[index];
 		cityMarkers[name].options.fillColor = color;
 		cityMarkers[name].options.singleton = false;
 		clusterInfected = clusterInfected || cityMarkers[name].options.infected;
 		//
-                cityMarkers[name].removeFrom(map);
-                cityMarkers[name].addTo(map);
+		let leafletLatLng = cityMarkers[name].getLatLng();
+		clusterPoints.push(turf.point([leafletLatLng.lat,leafletLatLng.lng]));
 	    });
+	    //
+	    clusterPoints = turf.featureCollection(clusterPoints);
+	    let options = {units: 'kilometers', maxEdge: 150};
+	    let myhull = turf.concave(clusterPoints,options);
+	    //let myhull = turf.convex(clusterPoints);
+	    
+	    //
+	    if(myhull != undefined){
+		let opt = clusterInfected?{color: 'red'}:{color: 'green'};
+		let polygon = L.polygon(myhull.geometry.coordinates[0], opt);
+		clusterPolygons.push(polygon);
+		if(showPolygons)
+		    polygon.addTo(map);
+		else
+		    polygon.removeFrom(map);
+	    }
+	    
 	    //
 	    cc.forEach(index=>{
 		let name = mapIndexCity[index];
@@ -209,12 +230,10 @@ function updateGroupIds(){
 	    //
 	    count += 1;
 	}
-	else{
+	else{//singleton
 	    let name = mapIndexCity[cc[0]];
 	    cityMarkers[name].options.fillColor = "#bebada";
-		cityMarkers[name].options.singleton = true;
-	    cityMarkers[name].removeFrom(map);
-	    cityMarkers[name].addTo(map);
+	    cityMarkers[name].options.singleton = true;
 	}
     });
 }
@@ -270,13 +289,11 @@ function buildCoords(){
 		radius: defaultStyle.radius
 	    });
 	    circle.options.singleton = false; 
-	    console.log(city.estimated_active_cases);
 	    
 	    circle.bindPopup('Nome: ' + city.name + '</br>' + 'Estimativa de Casos Ativos: ' + city.estimated_active_cases);
 	    circle.options.infected = (city.estimated_active_cases > 0);
 	    circle.options.clusterInfected = true;
 	    cityMarkers[city.name] = circle;
-
 	}
 	else{
 	    console.log(search);
@@ -292,7 +309,7 @@ function buildCoords(){
 	if(origin != destination && edges[key] > 0){
 	    //
 	    let latlngs = [coords[origin],coords[destination]];
-	    let line = L.polyline(latlngs, {color: '#A0A0A0',weight:10*opacityScale(edges[key])+1});
+	    let line = L.polyline(latlngs, {color: '#A0A0A0',weight:10*opacityScale(edges[key])+1,value:edges[key]});
 	    lines[key] = line;
 	}
     }
