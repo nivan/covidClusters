@@ -118,10 +118,9 @@ function loadInterface(){
 	maxZoom: 20,
 	attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a>, &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors'
     }).addTo(map);
-    
 
+    //
     updateThreshold();
-    
 }
 
 function connectedComponents(adj) {
@@ -238,6 +237,23 @@ function updateGroupIds(){
     });
 }
 
+function updateTreemap(){
+    let svg = d3.select("#treemap");
+    let width = +svg.attr("width");
+    let height = +svg.attr("height");
+    var treemap = d3.treemap()
+	.tile(d3.treemapResquarify)
+	.size([width, height])
+	.round(true)
+	.paddingInner(1);
+
+    //
+    var leaves = cityNodes.map();
+    //leaves {data: Object, height: 0, depth: 2, parent: zl, id: "Mountains", x: -30, y: 240}
+
+    treemap(root);
+}
+
 function updateThreshold() {
     //
     updateGroupIds();
@@ -245,6 +261,8 @@ function updateThreshold() {
     updateLinks();
     //
     updateNodes();
+    //
+    updateTreemap();
 }
 
 function buildCoords(){
@@ -289,8 +307,7 @@ function buildCoords(){
 		radius: defaultStyle.radius
 	    });
 	    circle.options.singleton = false; 
-	    
-	    circle.bindPopup('Nome: ' + city.name + '</br>' + 'Estimativa de Casos Ativos: ' + city.estimated_active_cases);
+	    circle.bindPopup('Nome: ' + retira_acentos(city.name) + '</br>' + 'Estimativa de Casos Ativos: ' + city.estimated_active_cases);
 	    circle.options.infected = (city.estimated_active_cases > 0);
 	    circle.options.clusterInfected = true;
 	    cityMarkers[city.name] = circle;

@@ -9,6 +9,7 @@ let defaultStyle = {
     "radius" : 5
 };
 let infectedNodes = {};
+let colorOption = 'cluster';
 
 //
 let clusterColorScale = d3.scaleOrdinal().domain(d3.range(11)).range(['#8dd3c7','#ffffb3','#fb8072','#80b1d3','#fdb462','#b3de69','#fccde5','#d9d9d9','#bc80bd','#ccebc5','#ffed6f']);
@@ -52,8 +53,17 @@ sem_acento = "AAAAAAACEEEEIIIIDNOOOOOOUUUUYRsBaaaaaaaceeeeiiiionoooooouuuuybyr";
 
 
 function updateNodes(){
+    
     graphCities.cities.forEach(city=>{
 	var circle = cityMarkers[city.name];
+
+	if(option == 'cluster'){
+	}
+	else if(option == 'cases'){
+	}
+	else if(option == 'casesPC'){
+	}
+	
 	if(!showSingletons){
 	    if(circle.options.singleton){
 		circle.removeFrom(map);
@@ -81,6 +91,7 @@ function updateLinks(){
 	    //
 	    //let clusterInfected = cityMarkers[origin].options.clusterInfected;
 	    line.options.color = "gray";
+	    line.options.opacity = 0.5;
 	    //
 	    line.removeFrom(map);
 	    line.addTo(map);
@@ -111,6 +122,12 @@ function loadInterface(){
 	updateThreshold();
     });
 
+    d3.select("#colorSelect")
+	.on("change",function(v){
+	    colorOption = this.selectedOptions[0].value;
+	    updateThreshold();
+	});
+    
     //////// MAP
     map = L.map('map').setView([-8.716788630258742,-38.1500244140625], 8);
 
@@ -238,6 +255,86 @@ function updateGroupIds(){
     });
 }
 
+function sumBySize(d) {
+    return d.value;
+}
+
+function updateTreemap(){
+    let svg = d3.select("#treemap");
+    let width = +svg.attr("width");
+    let height = +svg.attr("height");
+    var treemap = d3.treemap()
+	.tile(d3.treemapResquarify.ratio(0.5))
+	.size([width, height])
+	.round(true)
+	.paddingInner(1);
+
+    //
+    let xnodes = [{"id":"root", "parent":""}];
+    cityNodes.forEach(node=>{
+	xnodes.push({"id":node.id, "parent":"root", "value":node.cases});
+    });
+    
+    // stratify the data: reformatting for d3.js
+    var root = d3.stratify()
+	.id(function(d) { return d.id; })   // Name of the entity (column name is name in csv)
+	.parentId(function(d) { return d.parent; })   // Name of the parent (column name is parent in csv)
+    (xnodes);
+    root.sum(function(d) { return +d.value })   // Compute the numeric value for each entity
+   
+    
+    // var root = d3.hierarchy(leaves)
+    //   .eachBefore(function(d) { d.data.id = (d.parent ? d.parent.data.id + "." : "") + d.data.name; })
+    //   .sum(sumBySize)
+    //   .sort(function(a, b) { return b.height - a.height || b.value - a.value; });
+    // //leaves {data: Object, height: 0, depth: 2, parent: zl, id: "Mountains", x: -30, y: 240}
+    treemap(root);
+
+    debugger
+    
+    //
+    var cell = svg.selectAll("g")
+	.data(root.leaves())
+	.enter().append("g")
+	.attr("transform", function(d) { return "translate(" + d.x0 + "," + d.y0 + ")"; });
+
+    cell.append("rect")
+	.attr("id", function(d) { return d.data.id; })
+	.attr("width", function(d) { return d.x1 - d.x0; })
+	.attr("height", function(d) { return d.y1 - d.y0; })
+	.attr("fill", function(d,i) { return clusterColorScale(i%11); });
+
+    cell.append("clipPath")
+	.attr("id", function(d) { return "clip-" + d.data.id; })
+	.append("use")
+	.attr("xlink:href", function(d) { return "#" + d.data.id; });
+
+    // cell.append("text")
+    // 	.attr("clip-path", function(d) { return "url(#clip-" + d.data.id + ")"; })
+    // 	.selectAll("tspan")
+    // 	.data(function(d) { return d.data.name.split(/(?=[A-Z][^A-Z])/g); })
+    // 	.enter().append("tspan")
+    // 	.attr("x", 4)
+    // 	.attr("y", function(d, i) { return 13 + i * 10; })
+    // 	.text(function(d) { return d; });
+
+}
+
+//http://www.bde.pe.gov.br/visualizacao/Visualizacao_formato2.aspx?CodInformacao=288&Cod=3
+
+function updateScatter(){
+    var svg = d3.select("#scat");
+    var scat = new Scatterplot(svg,"scat1",50,0,300,300); //Criacao do primeiro scatterplot a partir de um objeto Scatterplot
+    //(definido no script JavaScript scat.js)
+    scat.setXAxisLabel("População"); //Informacoes a respeito dos eixos e titulo da visualizacao
+    scat.setYAxisLabel("Número de Casos");
+    scat.setTitle("População X Casos");
+    scat.updatePlot();
+    
+    var dataset = cityNodes.map(city=>[city.populacao,city.cases]);
+    scat.setData(dataset);
+}
+
 function updateThreshold() {
     //
     updateGroupIds();
@@ -245,6 +342,8 @@ function updateThreshold() {
     updateLinks();
     //
     updateNodes();
+    //
+    //updateScatter();
 }
 
 function buildCoords(){
@@ -252,7 +351,9 @@ function buildCoords(){
     
     //
     cityNodes = graphCities.cities.map(city=>{
-	return {"id":city.name,"group":0};
+	if(!(city.name in populacaoCidade))
+	    debugger
+	return {"id":city.name,"group":0, "populacao":populacaoCidade[city.name], "cases": city.estimated_active_cases};
     });
 
     edges = {};

@@ -26,35 +26,46 @@
 		    margin-right: 8px;
 		    opacity: 0.7;
 		}
+		.controlsDiv{
+		    border:1px solid black;
+		}
 	</style>
 
   </head>
   <body>
     <script src="https://d3js.org/d3.v5.min.js"></script>
     <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
-
+    <script src="scat.js"></script>
+    
     <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
    integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
    crossorigin=""></script>
 
-    <div class="thresholdDiv">
-      <label for="thresholdSlider">Limiar de mobilidade:</label>
-      <input type="range" name="thresholdSlider" id="threshold" min="0" max="200" value="0">
+    <div class="controlsDiv">
+      <label for="thresholdSlider">&nbsp;&nbsp;Limiar de mobilidade:</label>&nbsp;
+      <input type="range" name="thresholdSlider" id="threshold" min="0" max="200" value="0">&nbsp;
       <label for="thresholdSlider" id="thSliderValue"> 0%</label>
-
-      <input type="checkbox" id="singletonsCB" name="singletonCB"
-             checked>
+      &nbsp;&nbsp;&nbsp;
+      <input type="checkbox" id="singletonsCB" name="singletonCB" checked>
       <label for="singletonCB">Mostrar Singletons</label>
-
       <input type="checkbox" id="polygonsCB" name="polygonCB">
       <label for="polygonCB">Mostrar Polígonos</label>
-      
+
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      
+      <label for="colorByMenu">Colorir por:</label>
+      <select name="colorByMenu" id="colorSelect">
+	<option value="cluster">Cluster ID</option>
+	<option value="cases">Casos Estimados</option>
+	<option value="casesPC">Casos Estimados/População</option>
+      </select>
     </div>
     </br>
     <div id="map"></div>
-    
+    <!-- <svg width="800" height="800" id="scat"></svg> -->
     <script src="pe.js"></script>
     <script src="graphCities.js"></script>
+    <script src="cidadePop.js"></script>
     <script src="main.js"></script>
+
   </body>
 </html>
