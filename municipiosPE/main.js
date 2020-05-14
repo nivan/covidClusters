@@ -57,12 +57,12 @@ function updateNodes(){
     graphCities.cities.forEach(city=>{
 	var circle = cityMarkers[city.name];
 
-	if(option == 'cluster'){
-	}
-	else if(option == 'cases'){
-	}
-	else if(option == 'casesPC'){
-	}
+	// if(option == 'cluster'){
+	// }
+	// else if(option == 'cases'){
+	// }
+	// else if(option == 'casesPC'){
+	// }
 	
 	if(!showSingletons){
 	    if(circle.options.singleton){
