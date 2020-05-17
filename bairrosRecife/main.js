@@ -210,7 +210,7 @@ function loadInterface(){
     }).addTo(map);
 
     //
-    loadBarChart();
+    //loadBarChart();
     
     //
     updateThreshold();
