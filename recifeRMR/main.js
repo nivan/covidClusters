@@ -396,23 +396,6 @@ function updateThreshold() {
 
 function buildCoords(){
 
-    //remove cities
-    var citiesToRemove = {
-	'Abreu e Lima':1,
-	'Araçoiaba':1,
-	'Cabo de Santo Agostinho':1,
-	'Camaragibe':1,
-	'Ilha de Itamaracá':1,
-	'Itapissuma':1,
-	'Jaboatão dos Guararapes':1,
-	'Moreno':1,
-	'Olinda':1,
-	'Paulista':1,
-	'São Lourenço da Mata':1
-    };
-
-    graphBairros.cities = graphBairros.cities.filter(city=>{return !(city.name in citiesToRemove)})
-
     
     //
     cityNodes = graphBairros.cities.map(city=>{
@@ -428,8 +411,6 @@ function buildCoords(){
 	for(let i in city.edge_weights){
 	    //
 	    let t = i.slice(5);
-	    if(t in citiesToRemove)
-		continue;
 	    //
 	    cityRiskExposure[t] += (probInfection * city.edge_weights[i]);
 	    //
