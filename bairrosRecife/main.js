@@ -200,6 +200,13 @@ function loadInterface(){
 	updateNodes();
 	
     });
+
+    d3.select("#polygonsRECB").on("change",function(){
+	showClusterRiskExposure = this.checked;
+	//updatePolygons(); // not working check it
+	updateThreshold();
+	
+    });
     
     //////// MAP
     map = L.map('map').setView([-8.055830293075653, -34.96948242187501], 11);
@@ -321,7 +328,9 @@ function updateGroupIds(){
 		}
 		opt['opacity'] = 1;
 		opt['riskExposure'] = clusterRiskExposure;
+		opt['infected'] = clusterInfected;
 		let polygon = L.polygon(myhull.geometry.coordinates[0], opt);
+		polygon.bindPopup('Risk Exposure: ' + clusterRiskExposure.toFixed(3));
 		clusterPolygons.push(polygon);
 		if(showPolygons)
 		    polygon.addTo(map);
@@ -346,6 +355,35 @@ function updateGroupIds(){
     });
 }
 
+function updatePolygons(){
+    clusterPolygons.forEach(polygon=>{
+	let color = undefined;
+	if(showClusterRiskExposure){
+	    let clusterInfected = polygon.options.infected;
+	    let colorScale = d3.scaleQuantize().domain(riskExposureColorScale.domain()) ;
+	    if(clusterInfected){
+		colorScale.range(d3.schemeReds[5]);
+	    }
+	    else{
+		colorScale.range(d3.schemeBlues[5]);
+	    }
+	    color = colorScale(polygon.options.riskExposure);
+	}
+	else{
+	    color = clusterInfected?'red':'blue';
+	}
+
+	polygon.options.folor = color;
+	
+	if(showPolygons){
+	    polygon.addTo(map);
+	    polygon.addTo(map);
+	}
+	else
+	    polygon.removeFrom(map);
+    });
+}
+
 function updateThreshold() {
     //
     updateGroupIds();
@@ -354,6 +392,7 @@ function updateThreshold() {
     //
     updateNodes();
 }
+
 
 function buildCoords(){
 
@@ -409,7 +448,7 @@ function buildCoords(){
 		radius: defaultStyle.radius
 	    });
 	    circle.options.singleton = false; 
-	    circle.bindPopup('Name: ' + retira_acentos(city.name) + '</br>' + 'Active Cases: ' + city.active_cases + '</br>' + 'Estimated Active Cases: ' + city.est_active_cases);
+	    circle.bindPopup('Name: ' + retira_acentos(city.name) + '</br>' + 'Active Cases: ' + city.active_cases + '</br>' + 'Estimated Active Cases: ' + city.est_active_cases + '</br>' + 'Risk Exposure: ' + cityRiskExposure[city.name].toFixed(3));
 	    circle.options.infected = (city.est_active_cases > 0);
 	    circle.options.clusterInfected = true;
 	    cityMarkers[city.name] = circle;
