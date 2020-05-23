@@ -91,7 +91,7 @@ function updateLinks(){
 	    //
 	    //let clusterInfected = cityMarkers[origin].options.clusterInfected;
 	    line.options.color = "gray";
-	    line.options.opacity = 0.5;
+ 	    line.options.opacity = 0.5;
 	    //
 	    line.removeFrom(map);
 	    line.addTo(map);

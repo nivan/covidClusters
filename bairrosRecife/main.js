@@ -1,11 +1,20 @@
-//data
-let map = undefined;
-let barChart = undefined;
+//widgets
+let map         = undefined;
+let barChart    = undefined;
+let scatterplot = undefined;
+
+//color scales
+let clusterColorScale = d3.scaleOrdinal().domain(d3.range(11)).range(['#8dd3c7','#ffffb3','#fb8072','#80b1d3','#fdb462','#b3de69','#fccde5','#d9d9d9','#bc80bd','#ccebc5','#ffed6f']);
+let casosConfirmadosColorScale = d3.scaleQuantize().range(['#ffffe5','#fff7bc','#fee391','#fec44f','#fe9929','#ec7014','#cc4c02','#8c2d04']);
+let casosPCColorScale = d3.scaleQuantize().range(['#ffffe5','#fff7bc','#fee391','#fec44f','#fe9929','#ec7014','#cc4c02','#8c2d04']);
+let riskExposureColorScale = d3.scaleQuantize().range(['#ffffe5','#fff7bc','#fee391','#fec44f','#fe9929','#ec7014','#cc4c02','#8c2d04']);
+
 //
+let bairrosMode = true;
 let option;
 let threshold = 0;
 let showSingletons = true;
-let showPolygons = true;
+let showPolygons = false;
 let showClusterRiskExposure = false;
 let defaultStyle = {
     "weight" : 0.5,
@@ -14,60 +23,131 @@ let defaultStyle = {
 };
 let infectedNodes = {};
 
-//
-let clusterColorScale = d3.scaleOrdinal().domain(d3.range(11)).range(['#8dd3c7','#ffffb3','#fb8072','#80b1d3','#fdb462','#b3de69','#fccde5','#d9d9d9','#bc80bd','#ccebc5','#ffed6f']);
-let casosConfirmadosColorScale = d3.scaleQuantize().range(['#ffffe5','#fff7bc','#fee391','#fec44f','#fe9929','#ec7014','#cc4c02','#8c2d04']);
-let casosPCColorScale = d3.scaleQuantize().range(['#ffffe5','#fff7bc','#fee391','#fec44f','#fe9929','#ec7014','#cc4c02','#8c2d04']);
-let riskExposureColorScale = d3.scaleQuantize().range(['#ffffe5','#fff7bc','#fee391','#fec44f','#fe9929','#ec7014','#cc4c02','#8c2d04']);
-
-//
-let cityNodes = []; // [{name, group}]
-let coords    = {}; // name -> [latitude,longitude]
-let cityRiskExposure = {};
-//
-let edges = {};     // n1_n2 -> weight
-let cityLinks = []; // [{"source", "target", "value"}]
-//
-let clusterPolygons = [];
+// graph
+let nodes = []; // {name:,{...}}
+let links = []; // [{"source", "target", "value"}]
 
 //markers
-let cityMarkers = {}; // name -> marker
+let nodeMarkers = {}; // name -> marker
 let lines       = {}; // n1_n2-> lineMarker
-let polygons    = [];
+let clusters = [];
+let clusterPolygons = [];
 
-function retira_acentos(str) 
-{
 
-    com_acento = "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝŔÞßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿŕ";
+/////////////BAR CHART
 
-sem_acento = "AAAAAAACEEEEIIIIDNOOOOOOUUUUYRsBaaaaaaaceeeeiiiionoooooouuuuybyr";
-    novastr="";
-    for(i=0; i<str.length; i++) {
-        troca=false;
-        for (a=0; a<com_acento.length; a++) {
-            if (str.substr(i,1)==com_acento.substr(a,1)) {
-                novastr+=sem_acento.substr(a,1);
-                troca=true;
-                break;
-            }
-        }
-        if (troca==false) {
-            novastr+=str.substr(i,1);
-        }
+function scatterplotOptionChanged(opt){
+    if(scatterplot){
+	let mydata = [];
+	clusters.forEach(cluster=>{
+	    if(cluster.size > 1 || showSingletons){
+		let x = getClusterIndicator(cluster, opt[0]);
+		let y = getClusterIndicator(cluster, opt[1]);
+		mydata.push([x,y,cluster.color]);
+	    }
+	});
+	//
+	scatterplot.setXAxisLabel(opt[2]);
+	scatterplot.setYAxisLabel(opt[3]);
+	scatterplot.setData(mydata);
     }
-    return novastr;
 }
 
-function getIndicator(city, indName){
+function barChartOptionChanged(opt){
+    let data = [];
+    if(opt == 'cases'){
+	for(let name in nodes){
+	    let node = nodes[name];
+	    data.push({'key':name,'value':node.active_cases});
+	}	
+	barChart.setXAxisLabel('Num Active Cases');
+    }
+    else if(opt == 'casesPC'){
+	for(let name in nodes){
+	    let node = nodes[name];
+	    data.push({'key':name,'value':node.active_cases/node.population_2010});
+	}	
+	barChart.setXAxisLabel('Active Cases Per Capita');
+    }
+    else if(opt == 'riskExposure'){
+	for(let name in nodes){
+	    let node = nodes[name];
+	    data.push({'key':name,'value':node.RiskExposure});
+	}
+	barChart.setXAxisLabel('Risk Exposure');
+    }
+    data = data.sort(function(a,b){return b.value-a.value}).slice(0,7);
+    barChart.setData(data);
+}
+
+function loadBarChart(){
     
+    //
+    let opts = [{"text":"Active Cases","value":"cases"},
+    		{"text":"Active Cases Per Capita","value":"casesPC"},
+    		{"text":"Risk Exposure","value":"riskExposure"}];
+
+    let myDiv = d3.select("#barchartDiv");
+
+    barChart = new BarChartWidget(d3.select("#barchartDiv"),opts,"barChart",barChartOptionChanged);
+
+    //
+    barChartOptionChanged(barChart.getSelectedOption());
+}
+
+function loadScatterplot(){
+    let opts = [{"text":"Active Cases","value":"cases"},
+		{"text":"Active Cases Per Capita","value":"casesPC"},
+		{"text":"Population","value":"population"},
+		{"text":"Risk Exposure","value":"riskExposure"}];
+    
+    scatterplot = new ScatterplotWidget(d3.select("#scatterDiv"),opts,"scat",scatterplotOptionChanged);
+}
+
+
+
+///////////// MAP
+
+function isInfected(node){
+    return node.active_cases > 0;
+}
+
+function getClusterIndicator(node, indName){
+
     if(indName == 'cases'){
-	return city.active_cases;
+	return node.activeCases;
+    }
+    else if(indName == 'population'){
+	return node.population;
     }
     else if(indName == 'casesPC'){	
-	return city.active_cases/city.population_2010;
+	return node.activeCases/node.population;
     }
     else if(indName == 'riskExposure'){
-	return cityRiskExposure[city.name];
+	if(isInfected(node))
+	    return node.forceOfInfection;
+	else
+	    return node.riskExposure;
+    }
+    else{
+	debugger
+    }
+}
+
+function getIndicator(node, indName){
+    
+    if(indName == 'cases'){
+	return node.est_active_cases;
+    }
+    else if(indName == 'casesPC'){	
+	return node.est_active_cases/node.population_2010;
+    }
+    else if(indName == 'riskExposure'){
+	debugger
+	if(isInfected(node))
+	    return node.forceOfInfection;
+	else
+	    return node.riskExposure;
     }
     else{
 	debugger
@@ -75,8 +155,9 @@ function getIndicator(city, indName){
 }
 
 function updateNodes(){
-    graphBairros.cities.forEach(city=>{
-	var circle = cityMarkers[city.name];
+    for(let name in nodes){
+	let node = nodes[name];
+	var circle = nodeMarkers[node.name];
 
 	if(option == 'cluster'){
 	    circle.options.fillColor = circle.options.clusterColor;
@@ -90,12 +171,13 @@ function updateNodes(){
 		scale = casosPCColorScale;
 	    }
 	    else if(option == 'riskExposure'){
+		//nao existe
 		scale = riskExposureColorScale;
 	    }
 	    else{
 		debugger
 	    }
-	    circle.options.fillColor = scale(getIndicator(city,option));
+	    circle.options.fillColor = scale(getIndicator(node,option));
 	}
 	
 	if(!showSingletons){
@@ -113,7 +195,7 @@ function updateNodes(){
 	    circle.addTo(map);
 	    circle.bringToFront();
 	}
-    });
+    }
 }
 
 function updateLinks(){
@@ -123,60 +205,27 @@ function updateLinks(){
 	let line = lines[key];
 	if(line.options.value > threshold){
 	    //
-	    //let clusterInfected = cityMarkers[origin].options.clusterInfected;
+	    //let clusterInfected = nodeMarkers[origin].options.clusterInfected;
 	    line.options.color = "gray";
-	    line.options.opacity = 0.5;
+	    line.options.opacity = 0.5
 	    //
 	    line.removeFrom(map);
+	    line.decorator.removeFrom(map);
 	    line.addTo(map);
+	    //line.decorator.addTo(map);
+	    line.decorator.bringToBack();
 	}
 	else{
 	    line.removeFrom(map);
+	    line.decorator.removeFrom(map);
 	}
     }
 }
 
-function barChartOptionChanged(opt){
-    let data;
-    if(opt == 'cases'){
-	//
-	data = graphBairros.cities.map(city=>{
-	    return {'key':city.name,'value':city.active_cases};
-	}).sort(function(a,b){return b.value-a.value}).slice(0,7);
-	barChart.setXAxisLabel('Num Active Cases');
-    }
-    else if(opt == 'casesPC'){
-	//
-	data = graphBairros.cities.map(city=>{
-	    return {'key':city.name,'value':city.active_cases/city.population_2010};
-	}).sort(function(a,b){return b.value-a.value}).slice(0,7);
-	barChart.setXAxisLabel('Active Cases Per Capita');
-    }
-    else if(opt == 'riskExposure'){
-	//
-	data = [];
-	for(let city in cityRiskExposure){
-	    data.push({'key':city,'value':cityRiskExposure[city]});
-	}
-	data = data.sort(function(a,b){return b.value-a.value}).slice(0,7);
-	barChart.setXAxisLabel('Risk Exposure');
-    }
-    barChart.setData(data);
-}
-
-function loadBarChart(){
-    let opts = [{"text":"Active Cases","value":"cases"},
-		{"text":"Active Cases Per Capita","value":"casesPC"},
-		{"text":"Risk Exposure","value":"riskExposure"}];
-    
-    barChart = new BarChartWidget(d3.select("#barchartDiv"),opts,"barChart",barChartOptionChanged);
-
-    //
-    barChartOptionChanged(barChart.getSelectedOption());
-}
 
 function loadInterface(){
-
+    
+    
     //////// CONTROLS
     d3.select("#threshold").on("change",function(v){
 	//console.log(+this.value);
@@ -192,7 +241,7 @@ function loadInterface(){
 
     d3.select("#polygonsCB").on("change",function(v){
 	showPolygons = this.checked;
-	updateThreshold();
+	updatePolygons();
     });
 
     d3.select("#colorSelect").on("change",function(){
@@ -203,9 +252,7 @@ function loadInterface(){
 
     d3.select("#polygonsRECB").on("change",function(){
 	showClusterRiskExposure = this.checked;
-	//updatePolygons(); // not working check it
-	updateThreshold();
-	
+	updatePolygons();
     });
     
     //////// MAP
@@ -217,7 +264,10 @@ function loadInterface(){
     }).addTo(map);
 
     //
-    //loadBarChart();
+    loadBarChart();
+
+    //
+    loadScatterplot();
     
     //
     updateThreshold();
@@ -260,58 +310,116 @@ function updateGroupIds(){
     let mapCityIndex = {};
     let mapIndexCity = {};
     let adjList = [];
-    
-    cityNodes.forEach((city,i)=>{
-	mapCityIndex[city.id] = i;
-	mapIndexCity[i]       = city.id;
-	adjList.push([]);
-    });
-    cityLinks.forEach(l=>{
-	let source = l.source;
-	let target = l.target;
-	if(l.value > threshold){
-	    let sourceIndex = mapCityIndex[source];
-	    let targetIndex = mapCityIndex[target];
-	    //
-	    adjList[sourceIndex].push(targetIndex);
-	    adjList[targetIndex].push(sourceIndex);
-	}
-    });
-
+    let nodeStrength = {};
     //
-    clusterPolygons.forEach(pol=>{
-	pol.removeFrom(map);
-    });
-    clusterPolygons = [];
+    let i = 0;
+    for(const name in nodes){
+	let node = nodes[name];
+	nodeStrength[name]       = 0;
+	mapCityIndex[node.name]  = i;
+	mapIndexCity[i]          = node.name;
+	adjList.push([]);
+	i += 1;
+    }
+    //
+    for(const source in nodes){
+	let node = nodes[source];
+	for(const target in node.outEdges){
+	    let weight = node.outEdges[target];
+	    if(weight > threshold){
+		//
+		nodeStrength[source] += weight;
+		if(source != target) //garante que arcos só somam uma vez
+		    nodeStrength[target] += weight; 
+		//
+		let sourceIndex = mapCityIndex[source];
+		let targetIndex = mapCityIndex[target];
+		//
+		adjList[sourceIndex].push(targetIndex);
+		adjList[targetIndex].push(sourceIndex);
+	    }
+	}
+    }
     
+    //
+    clusters.forEach(cl=>{
+	if(cl.polygon != undefined){
+	    cl.polygon.removeFrom(map);
+	}
+	cl.nodes.forEach(n=>{n.cluster = undefined;});
+    });
+    clusters = [];
+
+
     //
     let ccs = connectedComponents(adjList);
     let count = 0;
     ccs.forEach(cc=>{
-	if(cc.length > 1){ //not singleton
-	    //update cluster
+	let cluster = {size:cc.length, polygon:undefined, infected:false,riskExposure:0,population:0,activeCases:0,estActiveCases:0,forceOfInfection:0,nodes:[]};
+	if(cc.length == 1){
+	    //singleton
+	    let name = mapIndexCity[cc[0]];
+	    let node = nodes[name];
+	    node.cluster = cluster;
+	    //update clusters
+	    cluster.infected         = isInfected(node);
+	    cluster.riskExposure     = node.riskExposure;
+	    cluster.population       = node.population_2010;
+	    cluster.activeCases      = node.active_cases;
+	    cluster.estActiveCases   = node.est_active_cases;
+	    cluster.forceOfInfection = (cluster.estActiveCases/cluster.population)*(node.name in node.outEdges?node.outEdges[node.name]:0);
+	    cluster.nodes = [name];
+	    //show cluster as singletons
+	    let color = "#bebada";
+	    nodeMarkers[name].options.clusterColor = color;
+	    nodeMarkers[name].options.singleton    = true;
+	    cluster.color                          = color;
+	}
+	else{
+	    //
+	    let clusterInfected         = false;
+	    let clusterRiskExposure     = 0;
+	    let clusterPopulation       = 0;
+	    let clusterActiveCases      = 0;
+	    let clusterEstActiveCases   = 0;
+	    let clusterForceOfInfection = 0;
+	    let clusterStrength         = 0;
+	    let clusterPoints           = [];
 	    let color = clusterColorScale(d3.min(cc)%11);
-	    let clusterInfected = false;
- 	    let clusterPoints = [];
-	    let clusterRiskExposure = 0;
+	    //
+	    cluster.nodes = cc.map(i=>mapIndexCity[i]);
 	    cc.forEach(index=>{
 		let name = mapIndexCity[index];
-		clusterRiskExposure += cityRiskExposure[name];
-		cityMarkers[name].options.clusterColor = color;
-		cityMarkers[name].options.singleton = false;
-		clusterInfected = clusterInfected || cityMarkers[name].options.infected;
+		let node = nodes[name];
+		node.cluster = cluster;
 		//
-		let leafletLatLng = cityMarkers[name].getLatLng();
+		clusterPopulation     += node.population_2010;
+		clusterActiveCases    += node.active_cases;
+		clusterEstActiveCases += node.est_active_cases;
+		clusterRiskExposure   += node.riskExposure;
+		clusterStrength       += nodeStrength[name];
+		clusterInfected        = clusterInfected || isInfected(node);
+		//
+		nodeMarkers[name].options.clusterColor = color;
+		nodeMarkers[name].options.singleton = false;
+		//
+		let leafletLatLng = nodeMarkers[name].getLatLng();
 		clusterPoints.push(turf.point([leafletLatLng.lat,leafletLatLng.lng]));
 	    });
-	    //
+
+	    clusterForceOfInfection = (clusterEstActiveCases/clusterPopulation) * (clusterStrength/cc.length);
+	    
+	    //Compute hull
 	    clusterPoints = turf.featureCollection(clusterPoints);
 	    let options = {units: 'kilometers', maxEdge: 150};
 	    let myhull = turf.concave(clusterPoints,options);
-	    //let myhull = turf.convex(clusterPoints);
-	    
+	    //let myhull = turf.convex(clusterPoints);	    
 	    //
-	    if(myhull != undefined){
+	    if(myhull == undefined){
+		cluster.polygon = undefined;
+	    }
+	    else{
+		//POLYGON
 		let opt;
 		if(showClusterRiskExposure){
 		    let colorScale = d3.scaleQuantize().domain(riskExposureColorScale.domain()) ;
@@ -330,57 +438,61 @@ function updateGroupIds(){
 		opt['riskExposure'] = clusterRiskExposure;
 		opt['infected'] = clusterInfected;
 		let polygon = L.polygon(myhull.geometry.coordinates[0], opt);
-		polygon.bindPopup('Risk Exposure: ' + clusterRiskExposure.toFixed(3));
-		clusterPolygons.push(polygon);
-		if(showPolygons)
-		    polygon.addTo(map);
+		if(clusterInfected)
+		    polygon.bindPopup('Force of Infection: ' + clusterForceOfInfection.toFixed(3));
 		else
-		    polygon.removeFrom(map);
+		    polygon.bindPopup('Risk Exposure: ' + clusterRiskExposure.toFixed(3));
+		
+		cluster.polygon          = polygon;
 	    }
 	    
-	    //
-	    cc.forEach(index=>{
-		let name = mapIndexCity[index];
-		cityMarkers[name].options.clusterInfected = clusterInfected;
-	    });
+	    //update cluster
+	    cluster.infected         = clusterInfected;
+	    cluster.riskExposure     = clusterRiskExposure;
+	    cluster.population       = clusterPopulation;
+	    cluster.activeCases      = clusterActiveCases;
+	    cluster.estActiveCases   = clusterEstActiveCases;
+	    cluster.forceOfInfection = clusterForceOfInfection;
+	    cluster.color            = color;
 	    
 	    //
 	    count += 1;
 	}
-	else{//singleton
-	    let name = mapIndexCity[cc[0]];
-	    cityMarkers[name].options.clusterColor = "#bebada";
-	    cityMarkers[name].options.singleton = true;
-	}
+	//
+	clusters.push(cluster);
     });
 }
 
 function updatePolygons(){
-    clusterPolygons.forEach(polygon=>{
+    clusters.forEach(cluster=>{
 	let color = undefined;
-	if(showClusterRiskExposure){
-	    let clusterInfected = polygon.options.infected;
-	    let colorScale = d3.scaleQuantize().domain(riskExposureColorScale.domain()) ;
-	    if(clusterInfected){
-		colorScale.range(d3.schemeReds[5]);
+	let polygon = cluster.polygon;
+	if(polygon != undefined){
+	    if(showClusterRiskExposure){
+		let colorScale = d3.scaleQuantize().domain(riskExposureColorScale.domain()) ;
+		if(cluster.infected){
+		    colorScale.range(d3.schemeReds[5]);
+		    color = colorScale(cluster.forceOfInfection);
+		}
+		else{
+		    colorScale.range(d3.schemeBlues[5]);
+		    color = colorScale(cluster.riskExposure);
+		}
 	    }
 	    else{
-		colorScale.range(d3.schemeBlues[5]);
+		color = cluster.infected?'red':'blue';
 	    }
-	    color = colorScale(polygon.options.riskExposure);
-	}
-	else{
-	    color = clusterInfected?'red':'blue';
-	}
 
-	polygon.options.folor = color;
-	
-	if(showPolygons){
-	    polygon.addTo(map);
-	    polygon.addTo(map);
+	    polygon.options.color = color;
+	    
+	    if(showPolygons){
+		polygon.removeFrom(map);
+		polygon.addTo(map);
+		polygon.bringToBack()
+	    }
+	    else
+		polygon.removeFrom(map);
 	}
-	else
-	    polygon.removeFrom(map);
     });
 }
 
@@ -390,104 +502,136 @@ function updateThreshold() {
     //
     updateLinks();
     //
+    updatePolygons();
+    //
     updateNodes();
+    //
+    scatterplot.update();
 }
 
+function getProbInfection(node){
+    return node.active_cases/node.population_2010;
+}
 
 function buildCoords(){
 
     //remove cities
-    var citiesToRemove = {
-	'Abreu e Lima':1,
-	'Araçoiaba':1,
-	'Cabo de Santo Agostinho':1,
-	'Camaragibe':1,
-	'Ilha de Itamaracá':1,
-	'Itapissuma':1,
-	'Jaboatão dos Guararapes':1,
-	'Moreno':1,
-	'Olinda':1,
-	'Paulista':1,
-	'São Lourenço da Mata':1
-    };
-
-    graphBairros.cities = graphBairros.cities.filter(city=>{return !(city.name in citiesToRemove)})
-
+    if(bairrosMode){
+	var citiesToRemove = {
+	    'Abreu e Lima':1,
+	    'Araçoiaba':1,
+	    'Cabo de Santo Agostinho':1,
+	    'Camaragibe':1,
+	    'Ilha de Itamaracá':1,
+	    'Itapissuma':1,
+	    'Jaboatão dos Guararapes':1,
+	    'Moreno':1,
+	    'Olinda':1,
+	    'Paulista':1,
+	    'São Lourenço da Mata':1
+	};
+	graph = graph.filter(city=>{return !(city.name in citiesToRemove)})
+    }
     
     //
-    cityNodes = graphBairros.cities.map(city=>{
-	cityRiskExposure[city.name] = 0;
-	return {"id":city.name,"group":0};
+    nodes = {};
+    graph.forEach(node =>{
+	nodes[node.name] = {"group":0,
+			    "name":node.name,
+			    "population_2010":node.population_2010,
+			    "lat": node.lat,
+			    "lng": node["long"],
+			    "riskExposure":0,
+			    "cluster":undefined,
+			    "active_cases":node.active_cases,'est_active_cases':node.est_active_cases, inEdges:{}, outEdges:{}};
     });
 
     //
-    edges = {};
-    graphBairros.cities.forEach(city=>{
-	coords[city.name] = [city.lat,city["long"]];
-	let probInfection = city.active_cases/city.population_2010;
-	for(let i in city.edge_weights){
+    let listNodes = [];
+    graph.forEach(node =>{
+	listNodes.push(nodes[node.name]);
+	let probInfection = getProbInfection(node);
+	let myNode        = nodes[node.name];
+	//
+	for(let i in node.edge_weights){
 	    //
-	    let t = i.slice(5);
-	    if(t in citiesToRemove)
-		continue;
-	    //
-	    cityRiskExposure[t] += (probInfection * city.edge_weights[i]);
-	    //
-	    let key = city.name + "_"+t;
-	    if(city.name == t)
-		continue;
-
-	    //
-	    if(city.edge_weights[i]>0){
-	    if(!(key in edges)) edges[key] = 0
-		edges[key] += 100*city.edge_weights[i];
+	    let t = i.slice(5); //neighborh
+	    let otherNode = nodes[t];
+	    if(bairrosMode){
+		if(t in citiesToRemove)
+		    continue;
 	    }
-	    cityLinks.push({"source": city.name, "target": t, "value": 100*city.edge_weights[i]});
+	    //
+	    if(node.edge_weights[i]>0){
+		let weight = 100*node.edge_weights[i];
+		myNode.outEdges[t]           = weight;
+		otherNode.inEdges[node.name] = weight;
+	    }
+	    //
+	    nodes[t].riskExposure += (probInfection * node.edge_weights[i]);
 	}
 
     });
 
     //fix color scales
+    ////
+    casosConfirmadosColorScale.domain(d3.extent(listNodes, d=>getIndicator(d,'cases')) );
+    ////
+    casosPCColorScale.domain(d3.extent(listNodes,d=>getIndicator(d,'casesPC')));
+    ////
     let exposures = [];
-    for(let city in cityRiskExposure){
-	exposures.push(cityRiskExposure[city]);
+    for(let name in nodes){
+	exposures.push(nodes[name].riskExposure.push);
     }
-    casosConfirmadosColorScale.domain(d3.extent(graphBairros.cities,d=>getIndicator(d,'cases')));
-    casosPCColorScale.domain(d3.extent(graphBairros.cities,d=>getIndicator(d,'casesPC')));
     riskExposureColorScale.domain(d3.extent(exposures));
+
+
+
     //
-    graphBairros.cities.forEach(city=>{
-	let coords = [city.lat,city['long']];
-	if(coords != undefined){
-	    var circle = L.circleMarker(coords,{
-		color: 'black',
-		weight: defaultStyle.weight,
-		fillColor: '#bebada',
-		fillOpacity: defaultStyle.fillOpacity,
-		radius: defaultStyle.radius
-	    });
-	    circle.options.singleton = false; 
-	    circle.bindPopup('Name: ' + retira_acentos(city.name) + '</br>' + 'Active Cases: ' + city.active_cases + '</br>' + 'Estimated Active Cases: ' + city.est_active_cases + '</br>' + 'Risk Exposure: ' + cityRiskExposure[city.name].toFixed(3));
-	    circle.options.infected = (city.est_active_cases > 0);
-	    circle.options.clusterInfected = true;
-	    cityMarkers[city.name] = circle;
-	}
-	else{
-	    console.log(search);
-	}
+    graph.forEach(nn =>{
+	let node = nodes[nn.name];
+	let coords = [node.lat,node.lng];	
+	var circle = L.circleMarker(coords,{
+	    color: 'black',
+	    weight: defaultStyle.weight,
+	    fillColor: '#bebada',
+	    fillOpacity: defaultStyle.fillOpacity,
+	    radius: defaultStyle.radius
+	});
+	//
+	//circle.options.clusterInfected = true; //???????
+	//circle.options.infected        = (node.est_active_cases > 0);
+	//suffix = (isInfected(node)?'Force of Infection: ' + node.forceOfInfection.toFixed(3):'Risk Exposure: ' + node.riskExposure.toFixed(3));
+	circle.bindPopup('Name: ' + node.name + '</br>' + 'Active Cases: ' + node.active_cases + '</br>' + 'Estimated Active Cases: ' + node.est_active_cases);
+
+	//
+	nodeMarkers[node.name] = circle;
     });
     
     //
     let opacityScale = d3.scaleLinear().domain([0,100]).range([0,1]);
-    for(let key in edges){
-	let x = key.indexOf("_");
-	let origin = key.slice(0,x);
-	let destination = key.slice(x+1);
-	if(origin != destination && edges[key] > 0){
-	    //
-	    let latlngs = [coords[origin],coords[destination]];
-	    let line = L.polyline(latlngs, {color: '#A0A0A0',weight:10*opacityScale(edges[key])+1,value:edges[key]});
-	    lines[key] = line;
+    for(let origin in nodes){
+	let node = nodes[origin];
+	
+	for(let destination in node.outEdges){
+	    let otherNode = nodes[destination];
+
+	    if(origin != destination){
+		let weight = node.outEdges[destination];
+		
+		//create graphic representation
+		let latlngs = [[node.lat,node.lng],[otherNode.lat,otherNode.lng]];
+		let line = L.polyline(latlngs, {'color': 'gray','weight':10*opacityScale(weight)+1,'value':weight,'opacity':0.1});
+		let decorator = L.polylineDecorator(line, {
+		    patterns: [
+			{offset: '95%', repeat: 0, symbol: L.Symbol.arrowHead({pixelSize: 12, polygon: true, pathOptions: {color: 'gray', stroke: true}})}
+		    ]
+		});
+		//
+		line.decorator = decorator;
+		lines[origin+"_"+destination] = line;
+	    }
+
 	}
     }
 }
@@ -495,8 +639,11 @@ function buildCoords(){
 buildCoords();
 
 // default values
-threshold = (+d3.select("#threshold").node().value)/10;
+threshold    = (+d3.select("#threshold").node().value)/10;
+showPolygons = (d3.select("#polygonsCB").node().checked);
 d3.select("#thSliderValue").text((threshold) + "%");
-option = 'cluster'; 
+option = 'cluster';
 
+
+//
 loadInterface();
