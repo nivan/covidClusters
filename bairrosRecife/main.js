@@ -25,6 +25,7 @@ let threshold               = 0;
 let showSingletons          = true;
 let showPolygons            = false;
 let showClusterRiskExposure = false;
+let showBoundaries          = false;
 let defaultStyle = {
     "weight" : 0.5,
     "fillOpacity" : 1.0,
@@ -210,26 +211,7 @@ function updateNodes(){
 	let node = nodes[name];
 	var circle = nodeMarkers[node.name];
 
-	if(option == 'cluster'){
-	    circle.options.fillColor = circle.options.clusterColor;
-	}
-	else{
-	    let scale = undefined;
-	    if(option == 'cases'){
-		scale = casosConfirmadosColorScale;
-	    }
-	    else if(option == 'casesPC'){
-		scale = casosPCColorScale;
-	    }
-	    else if(option == 'riskExposure'){
-		//nao existe
-		scale = riskExposureColorScale;
-	    }
-	    else{
-		debugger
-	    }
-	    circle.options.fillColor = scale(getIndicator(node,option));
-	}
+	circle.options.fillColor = circle.options.clusterColor;	
 	
 	if(!showSingletons){
 	    if(circle.options.singleton){
@@ -274,11 +256,31 @@ function updateLinks(){
 }
 
 function updateBoundaries(){
-	if(this.showBoundaries){
-		layerBoundaries.addTo(map).bringToBack();
+
+    //
+    if(!showBoundaries){
+	layerBoundaries.removeFrom(map);
+    }
+    else{
+	//
+	if(option == 'cluster'){
+	    clusters.forEach(cluster=>{
+		cluster.nodes.forEach(n => {
+		    let node = nodes[n];
+		    node.boundary.removeFrom(map);
+		    if(cluster.size > 1 || showSingletons){
+			node.boundary.options.fillColor   = cluster.color;
+			node.boundary.options.fillOpacity = 0.8;
+			node.boundary.options.weight      = 1;
+			node.boundary.options.color       = "gray";
+			node.boundary.addTo(map);
+		    }
+		});
+	    });
 	}
-	else
-		layerBoundaries.removeFrom(map);
+	else{
+	}
+    }
 }
 
 function loadInterface(){
@@ -326,9 +328,12 @@ function loadInterface(){
 	attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a>, &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-	//
-	layerBoundaries = L.geoJson(boundaries);
-
+    //
+    layerBoundaries = L.geoJson(boundaries);
+    for(let key in layerBoundaries._layers){
+	let item = layerBoundaries._layers[key]
+	nodes[item.feature.properties.bairro_nome].boundary = item;
+    }
 
     //
     loadBarChart();
@@ -452,7 +457,7 @@ function updateGroupIds(){
 	    let clusterForceOfInfection = 0;
 	    let clusterStrength         = 0;
 	    let clusterPoints           = [];
-	    let color = clusterColorScale(d3.min(cc)%11);
+	    let color = clusterColorScale(count%11);//clusterColorScale(d3.min(cc)%11);
 	    //
 	    cluster.nodes = cc.map(i=>mapIndexCity[i]);
 	    cc.forEach(index=>{
@@ -569,6 +574,8 @@ function updatePolygons(){
 function updateThreshold() {
     //
     updateGroupIds();
+    //
+    updateBoundaries();
     //
     updateLinks();
     //
