@@ -10,11 +10,20 @@ let casosPCColorScale = d3.scaleQuantize().range(['#ffffe5','#fff7bc','#fee391',
 let riskExposureColorScale = d3.scaleQuantize().range(['#ffffe5','#fff7bc','#fee391','#fec44f','#fe9929','#ec7014','#cc4c02','#8c2d04']);
 
 //
-let bairrosMode = true;
+let bairrosMode     = true;
+let layerBoundaries = undefined;
+
+//
+let totalPopulation         = 0;
+let dates                   = undefined;
+let currentDate             = undefined;
+let casesByDate             = {};
+let estimateCasesByDate     = {};
+//
 let option;
-let threshold = 0;
-let showSingletons = true;
-let showPolygons = false;
+let threshold               = 0;
+let showSingletons          = true;
+let showPolygons            = false;
 let showClusterRiskExposure = false;
 let defaultStyle = {
     "weight" : 0.5,
@@ -36,19 +45,26 @@ let clusterPolygons = [];
 
 /////////////BAR CHART
 
+function isInfected(node){
+    return node.active_cases > 0;
+}
+
 function scatterplotOptionChanged(opt){
     if(scatterplot){
 	let mydata = [];
-	clusters.forEach(cluster=>{
+	clusters.forEach((cluster,i)=>{
 	    if(cluster.size > 1 || showSingletons){
 		let x = getClusterIndicator(cluster, opt[0]);
 		let y = getClusterIndicator(cluster, opt[1]);
-		mydata.push([x,y,cluster.color]);
+		if(x != undefined && y != undefined){		   
+		    mydata.push([x,y,cluster.color,i]);
+		}
 	    }
 	});
 	//
 	scatterplot.setXAxisLabel(opt[2]);
 	scatterplot.setYAxisLabel(opt[3]);
+	console.log(mydata.length);
 	scatterplot.setData(mydata);
     }
 }
@@ -84,8 +100,9 @@ function loadBarChart(){
     
     //
     let opts = [{"text":"Active Cases","value":"cases"},
-    		{"text":"Active Cases Per Capita","value":"casesPC"},
-    		{"text":"Risk Exposure","value":"riskExposure"}];
+    		{"text":"Active Cases Per Capita","value":"casesPC"}//,
+    		//{"text":"Risk Exposure","value":"riskExposure"}
+	       ];
 
     let myDiv = d3.select("#barchartDiv");
 
@@ -95,39 +112,68 @@ function loadBarChart(){
     barChartOptionChanged(barChart.getSelectedOption());
 }
 
+function scatterPointSelected(id){
+    let selCluster = clusters[id];
+    if(selCluster.polygon){
+	selCluster.polygon.openPopup();
+    }
+    else{
+	nodeMarkers[selCluster.nodes[0]].openPopup()
+    }
+}
+
 function loadScatterplot(){
     let opts = [{"text":"Active Cases","value":"cases"},
 		{"text":"Active Cases Per Capita","value":"casesPC"},
 		{"text":"Population","value":"population"},
-		{"text":"Risk Exposure","value":"riskExposure"}];
+		{"text":"Risk Exposure","value":"riskExposure"},
+		{"text":"Force of Infection","value":"foi"}];
+    opts.sort(function(x,y){
+	let nameA = x.text;
+	let nameB = y.text;
+	
+	if (nameA < nameB) {
+	    return -1;
+	}
+	if (nameA > nameB) {
+	    return 1;
+	}
+
+	// names must be equal
+	return 0;
+    });
     
     scatterplot = new ScatterplotWidget(d3.select("#scatterDiv"),opts,"scat",scatterplotOptionChanged);
+    scatterplot.setSelectionCallback(scatterPointSelected);
 }
 
 
 
 ///////////// MAP
 
-function isInfected(node){
-    return node.active_cases > 0;
-}
 
-function getClusterIndicator(node, indName){
+function getClusterIndicator(cluster, indName){
 
     if(indName == 'cases'){
-	return node.activeCases;
+	return cluster.activeCases;
     }
     else if(indName == 'population'){
-	return node.population;
+	return cluster.population;
     }
     else if(indName == 'casesPC'){	
-	return node.activeCases/node.population;
+	return cluster.activeCases/cluster.population;
     }
     else if(indName == 'riskExposure'){
-	if(isInfected(node))
-	    return node.forceOfInfection;
+	if(cluster.infected)
+	    return undefined;
 	else
-	    return node.riskExposure;
+	    return cluster.riskExposure;
+    }
+    else if(indName == 'foi'){
+	if(cluster.infected)
+	    return cluster.forceOfInfection;
+	else
+	    return undefined;
     }
     else{
 	debugger
@@ -143,11 +189,16 @@ function getIndicator(node, indName){
 	return node.est_active_cases/node.population_2010;
     }
     else if(indName == 'riskExposure'){
-	debugger
+	if(isInfected(node))
+	    return undefined;
+	else
+	    return node.riskExposure;
+    }
+    else if(indName == 'foi'){
 	if(isInfected(node))
 	    return node.forceOfInfection;
 	else
-	    return node.riskExposure;
+	    return undefined;
     }
     else{
 	debugger
@@ -222,6 +273,13 @@ function updateLinks(){
     }
 }
 
+function updateBoundaries(){
+	if(this.showBoundaries){
+		layerBoundaries.addTo(map).bringToBack();
+	}
+	else
+		layerBoundaries.removeFrom(map);
+}
 
 function loadInterface(){
     
@@ -232,7 +290,12 @@ function loadInterface(){
 	d3.select("#thSliderValue").text((+this.value)/10 + "%");
 	threshold = (+this.value)/10;
 	updateThreshold();
-    });
+	});
+
+	d3.select("#showBoundariesCB").on("change",function(v){
+		showBoundaries = this.checked;
+		updateBoundaries();
+	});
 
     d3.select("#singletonsCB").on("change",function(v){
 	showSingletons = this.checked;
@@ -262,6 +325,10 @@ function loadInterface(){
 	maxZoom: 20,
 	attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a>, &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors'
     }).addTo(map);
+
+	//
+	layerBoundaries = L.geoJson(boundaries);
+
 
     //
     loadBarChart();
@@ -438,11 +505,14 @@ function updateGroupIds(){
 		opt['riskExposure'] = clusterRiskExposure;
 		opt['infected'] = clusterInfected;
 		let polygon = L.polygon(myhull.geometry.coordinates[0], opt);
+		let str = "Population: " + clusterPopulation + "</br>"+
+		          "Percentage of Population: " + (100*clusterPopulation/totalPopulation).toFixed(3) + "%<br>";
 		if(clusterInfected)
-		    polygon.bindPopup('Force of Infection: ' + clusterForceOfInfection.toFixed(3));
+		    str += 'Force of Infection: ' + clusterForceOfInfection.toFixed(3);
 		else
-		    polygon.bindPopup('Risk Exposure: ' + clusterRiskExposure.toFixed(3));
+		    str += 'Risk Exposure: ' + clusterRiskExposure.toFixed(3);
 		
+		polygon.bindPopup(str);	
 		cluster.polygon          = polygon;
 	    }
 	    
@@ -513,7 +583,45 @@ function getProbInfection(node){
     return node.active_cases/node.population_2010;
 }
 
+function updateDate(){
+	for(let name in nodes){
+	    let node = nodes[name];
+	    node["active_cases"] = casesByDate[name][currentDate];
+	    node['est_active_cases'] =  estimateCasesByDate[name][currentDate];
+	    //
+	    let circle = nodeMarkers[name];
+	    circle.bindPopup('Name: ' + node.name + '</br>' + 'Active Cases: ' + node.active_cases + '</br>' + 'Estimated Active Cases: ' + node.est_active_cases);
+	}
+	updateThreshold();
+	barChartOptionChanged(barChart.getSelectedOption());
+}
+
+
+
 function buildCoords(){
+
+	//
+	dates       = [];
+	for(let i = 0 ; i < graph[0].active_cases.length ; ++i){
+		if(i%2 == 0)
+			dates.push(graph[0].active_cases[i][0]);
+	}
+	currentDate = dates[0];
+
+	d3.select("#dateSelect")
+	.selectAll("option")
+	.data(dates)
+	.enter()
+	.append("option")
+	.attr("value",d=>d)
+	.text(d=>d);
+
+	d3.select("#dateSelect")
+	.on("change",function(){
+		currentDate = this.selectedOptions[0].value;
+		updateDate();
+	});
+	
 
     //remove cities
     if(bairrosMode){
@@ -534,23 +642,42 @@ function buildCoords(){
     }
     
     //
-    nodes = {};
-    graph.forEach(node =>{
-	nodes[node.name] = {"group":0,
-			    "name":node.name,
-			    "population_2010":node.population_2010,
-			    "lat": node.lat,
-			    "lng": node["long"],
-			    "riskExposure":0,
-			    "cluster":undefined,
-			    "active_cases":node.active_cases,'est_active_cases':node.est_active_cases, inEdges:{}, outEdges:{}};
-    });
+	nodes = {};
+	graph.forEach(node => {
+		//
+		let cases    = {};
+		let estCases = {};
+		node.active_cases.forEach(x=>{
+			cases[x[0]]    = x[1];
+			estCases[x[0]] = x[1]/0.2;
+		});
+		casesByDate[node.name]         = cases;
+		estimateCasesByDate[node.name] = estCases;
+		
+		//
+		nodes[node.name] = {
+			"group": 0,
+			"name": node.name,
+			"population_2010": node.population_2010,
+			"lat": node.lat,
+			"lng": node["long"],
+			"riskExposure": 0,
+			"cluster": undefined,
+			"active_cases": cases[currentDate],
+			'est_active_cases': estCases[currentDate],
+			inEdges: {},
+			outEdges: {}
+		};
+
+		//
+		totalPopulation += nodes[node.name].population_2010;
+	});
 
     //
     let listNodes = [];
     graph.forEach(node =>{
 	listNodes.push(nodes[node.name]);
-	let probInfection = getProbInfection(node);
+	let probInfection = getProbInfection(nodes[node.name]);
 	let myNode        = nodes[node.name];
 	//
 	for(let i in node.edge_weights){
@@ -636,6 +763,7 @@ function buildCoords(){
     }
 }
 
+//
 buildCoords();
 
 // default values
