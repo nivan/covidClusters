@@ -258,27 +258,68 @@ function updateLinks(){
 function updateBoundaries(){
 
     //
-    if(!showBoundaries){
-	layerBoundaries.removeFrom(map);
+    let nodesList = [];
+    for(let n in nodes){
+	let node = nodes[n];
+	nodesList.push(node);
+	node.boundary.removeFrom(map);
     }
-    else{
+    if(showBoundaries){
 	//
 	if(option == 'cluster'){
 	    clusters.forEach(cluster=>{
 		cluster.nodes.forEach(n => {
 		    let node = nodes[n];
-		    node.boundary.removeFrom(map);
+
 		    if(cluster.size > 1 || showSingletons){
 			node.boundary.options.fillColor   = cluster.color;
 			node.boundary.options.fillOpacity = 0.8;
 			node.boundary.options.weight      = 1;
 			node.boundary.options.color       = "gray";
 			node.boundary.addTo(map);
+			node.boundary.bringToBack()
 		    }
 		});
 	    });
 	}
 	else{
+	    if(option == 'cases'){
+		let domain = d3.extent(nodesList,d=>d.active_cases);
+		casosConfirmadosColorScale.domain(domain);
+		clusters.forEach(cluster=>{
+		    cluster.nodes.forEach(n => {
+			let node = nodes[n];
+			if(cluster.size > 1 || showSingletons){
+			    let color = casosConfirmadosColorScale(node.active_cases);
+			    node.boundary.options.fillColor   = color;
+			    node.boundary.options.fillOpacity = 0.8;
+			    node.boundary.options.weight      = 1;
+			    node.boundary.options.color       = "gray";
+			    node.boundary.addTo(map);
+			    node.boundary.bringToBack()
+			}
+		    });
+		});
+	    }
+	    else if(option == 'casesPC'){
+		let domain = d3.extent(nodesList,d=>d.active_cases/d.population_2010);
+		casosPCColorScale.domain(domain);
+		clusters.forEach(cluster=>{
+		    cluster.nodes.forEach(n => {
+			let node = nodes[n];
+			if(cluster.size > 1 || showSingletons){
+			    let color = casosPCColorScale(node.active_cases/node.population_2010);
+			    node.boundary.options.fillColor   = color;
+			    node.boundary.options.fillOpacity = 0.8;
+			    node.boundary.options.weight      = 1;
+			    node.boundary.options.color       = "gray";
+			    node.boundary.addTo(map);
+			    node.boundary.bringToBack()
+			}
+		    });
+		});
+	    }
+	    
 	}
     }
 }
@@ -311,7 +352,7 @@ function loadInterface(){
 
     d3.select("#colorSelect").on("change",function(){
 	option = this.selectedOptions[0].value;
-	updateNodes();
+	updateBoundaries();
 	
     });
 
@@ -774,8 +815,9 @@ function buildCoords(){
 buildCoords();
 
 // default values
-threshold    = (+d3.select("#threshold").node().value)/10;
-showPolygons = (d3.select("#polygonsCB").node().checked);
+threshold      = (+d3.select("#threshold").node().value)/10;
+showPolygons   = (d3.select("#polygonsCB").node().checked);
+showBoundaries = (d3.select("#showBoundariesCB").node().checked);
 d3.select("#thSliderValue").text((threshold) + "%");
 option = 'cluster';
 
