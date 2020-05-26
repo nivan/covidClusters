@@ -319,6 +319,25 @@ function updateBoundaries(){
 		    });
 		});
 	    }
+	    else if(option == 'sobre60'){
+		let domain = d3.extent(nodesList,d=>d.sobre60);
+		casosPCColorScale.domain(domain);
+		clusters.forEach(cluster=>{
+		    cluster.nodes.forEach(n => {
+			let node = nodes[n];
+			if(cluster.size > 1 || showSingletons){
+			    let color = casosPCColorScale(node.sobre60);
+			    node.boundary.options.fillColor   = color;
+			    node.boundary.options.fillOpacity = 0.8;
+			    node.boundary.options.weight      = 1;
+			    node.boundary.options.color       = "gray";
+			    node.boundary.addTo(map);
+			    node.boundary.bringToBack()
+			}
+		    });
+		});
+	    }
+	    
 	    
 	}
     }
@@ -690,36 +709,37 @@ function buildCoords(){
     }
     
     //
-	nodes = {};
-	graph.forEach(node => {
-		//
-		let cases    = {};
-		let estCases = {};
-		node.active_cases.forEach(x=>{
-			cases[x[0]]    = x[1];
-			estCases[x[0]] = x[1]/0.2;
-		});
-		casesByDate[node.name]         = cases;
-		estimateCasesByDate[node.name] = estCases;
-		
-		//
-		nodes[node.name] = {
-			"group": 0,
-			"name": node.name,
-			"population_2010": node.population_2010,
-			"lat": node.lat,
-			"lng": node["long"],
-			"riskExposure": 0,
-			"cluster": undefined,
-			"active_cases": cases[currentDate],
-			'est_active_cases': estCases[currentDate],
-			inEdges: {},
-			outEdges: {}
-		};
-
-		//
-		totalPopulation += nodes[node.name].population_2010;
+    nodes = {};
+    graph.forEach(node => {
+	//
+	let cases    = {};
+	let estCases = {};
+	node.active_cases.forEach(x=>{
+	    cases[x[0]]    = x[1];
+	    estCases[x[0]] = x[1]/0.2;
 	});
+	casesByDate[node.name]         = cases;
+	estimateCasesByDate[node.name] = estCases;
+	
+	//
+	nodes[node.name] = {
+	    "group": 0,
+	    "name": node.name,
+	    "population_2010": node.population_2010,
+	    "lat": node.lat,
+	    "lng": node["long"],
+	    "riskExposure": 0,
+	    "cluster": undefined,
+	    "active_cases": cases[currentDate],
+	    'est_active_cases': estCases[currentDate],
+	    "sobre60":node["SOBRE"]["SOBRE60"]["mean"],
+	    inEdges: {},
+	    outEdges: {}
+	};
+
+	//
+	totalPopulation += nodes[node.name].population_2010;
+    });
 
     //
     let listNodes = [];
