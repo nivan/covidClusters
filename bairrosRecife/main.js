@@ -465,6 +465,7 @@ function loadInterface(){
 	let item = layerBoundaries._layers[key]
 	nodes[item.feature.properties.bairro_nome].boundary = item;
     }
+    //
 
     //
     loadBarChart();
