@@ -43,6 +43,10 @@ let lines       = {}; // n1_n2-> lineMarker
 let clusters = [];
 let clusterPolygons = [];
 
+//
+var selectedPopup = L.popup();
+
+
 
 /////////////BAR CHART
 
@@ -115,7 +119,21 @@ function loadBarChart(){
 
 function scatterPointSelected(id){
     let selCluster = clusters[id];
-    nodeMarkers[selCluster.nodes[0]].openPopup()
+    let node = nodes[selCluster.nodes[0]];
+
+    //{lat: 51.49901887040356, lng: -0.08342742919921876}
+    let suffix = (selCluster.infected)?'Force of Infection: ' + selCluster.forceOfInfection.toFixed(3):'Risk Exposure: ' + selCluster.riskExposure.toFixed(3);
+    selectedPopup.setLatLng({lat: node.lat, lng: node.lng})
+        .setContent("Selected cluster " + "</br>" +
+		    "Size: " + selCluster.size + "</br>" +
+		    "Population: " + selCluster.population +
+		    "Active Cases: " + selCluster.activeCases + "</br>" +
+		    suffix
+		   )
+        .openOn(map);
+    
+    //nodeMarkers[selCluster.nodes[0]].openPopup();
+
 }
 
 function loadScatterplot(){
