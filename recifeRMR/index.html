@@ -1,84 +1,186 @@
+<!DOCTYPE html>
 <html>
-  <head>
-     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
-   integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
-   crossorigin=""/>
-    <style>
-		html, body {
-			height: 100%;
-			margin: 0;
-		}
-		#map {
-			width: 1600px;
-			height: 550px;
-		}
+<meta charset="utf-8" />
 
-		.legend {
-		    line-height: 18px;
-		    color: #555;
-		    background:  #fff;
-		    
-		}
-		.legend i {
-		    width: 18px;
-		    height: 18px;
-		    float: left;
-		    margin-right: 8px;
-		    opacity: 0.7;
-		}
-		.controlsDiv{
-		    border:1px solid black;
-		}
+<head>
+        <link rel="stylesheet" href="../css/leaflet.css">
+        </link>
 
-	</style>
+        <style>
+                #map {
+                        width: 100%;
+                        height: 90%;
+                }
 
-  </head>
-  <body>
-    <script src="https://d3js.org/d3.v5.min.js"></script>
-    <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
-    <script src="RowChart.js"></script>
-    <script src="BarChartWidget.js"></script>
+                body {
+                        background: #d3dadd;
+                }
 
-    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
-   integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
-   crossorigin=""></script>
-    <div>
-    <div class="controlsDiv">
-<label for="thresholdSlider">&nbsp;&nbsp;Limiar de mobilidade:</label>&nbsp;
-<input type="range" name="thresholdSlider" id="threshold" min="0" max="200" value="62">&nbsp;
-      <label for="thresholdSlider" id="thSliderValue"> 0%</label>
-      &nbsp;&nbsp;&nbsp;
+                #main {
+                        min-height: 800px;
+                        margin: 0px;
+                        padding: 0px;
+                        display: -webkit-flex;
+                        -webkit-flex-flow: row;
+                        flex-flow: row;
+                }
 
-      <input type="checkbox" id="singletonsCB" name="singletonCB" checked>
-      <label for="singletonCB">Mostrar Singletons</label>
+                #main>article {
+                        margin: 4px;
+                        padding: 5px;
+                        border: 1px solid #ffffff;
+                        border-radius: 7pt;
+                        background: #ffffff;
+                        -webkit-flex: 3 1 75%;
+                        flex: 3 1 55%;
+                        -webkit-order: 2;
+                        order: 2;
+                }
 
-      <input type="checkbox" id="polygonsCB" name="polygonCB" checked>
-      <label for="polygonCB">Mostrar Polígonos</label>
+                #main>nav {
+                        margin: 4px;
+                        padding: 5px;
+                        border: 1px solid #8888bb;
+                        border-radius: 7pt;
+                        background: #ccccff;
+                        -webkit-flex: 1 6 20%;
+                        flex: 1 6 20%;
+                        -webkit-order: 1;
+                        order: 1;
+                }
 
-      <input type="checkbox" id="polygonsRECB" name="polygonRECB">
-      <label for="polygonRECB">Mostrar Risco dos Clusters</label>
+                #main>aside {
+                        margin: 4px;
+                        padding: 5px;
+                        border: 1px solid #8888bb;
+                        border-radius: 7pt;
+                        background: #ffffff;
+                        -webkit-flex: 1 6 30%;
+                        flex: 1 6 30%;
+                        -webkit-order: 3;
+                        order: 3;
+                }
 
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      
-      <label for="colorByMenu">Colorir por:</label>
-      <select name="colorByMenu" id="colorSelect">
-	<option value="cluster">Cluster ID</option>
-	<option value="cases">Active Cases</option>
-	<option value="casesPC">Active Cases Per Capita</option>
-	<option value="riskExposure">Risk Exposure</option>
-      </select>
-    </div>
-    </br>
-    <div id="map"></div>
-    </div>
+                header,
+                footer {
+                        display: block;
+                        margin: 4px;
+                        padding: 5px;
+                        min-height: 50px;
+                        border: 1px solid #000000;
+                        font: 12px Helvetica;
+                        background: #ffffff;
+                }
 
-    <div id="barchartDiv"></div>
-    <div id="scatterDiv"></div>
+                /* Too narrow to support three columns */
+                @media all and (max-width: 640px) {
+
+                        #main,
+                        #page {
+                                -webkit-flex-flow: column;
+                                flex-flow: column;
+                        }
+
+                        #main>article,
+                        #main>nav,
+                        #main>aside {
+                                /* Return them to document order */
+                                -webkit-order: 0;
+                                order: 0;
+                        }
+
+                        #main>nav,
+                        #main>aside,
+                        header,
+                        footer {
+                                min-height: 50px;
+                                max-height: 50px;
+                                font: 15px Helvetica;
+                        }
+                }
+        </style>
+</head>
+
+<body>
+
+        <div id='main'>
+                <article>
+                        <header>
+                                <div class="controlsDiv">
+                                        <label for="thresholdSlider">
+                                                <span>Limiar de mobilidade:</span>
+                                                <input type="range" name="thresholdSlider" id="threshold" min="0"
+                                                        max="200" value="45">&nbsp;
+                                                <span for="thresholdSlider" id="thSliderValue"> 0%</span>
 
 
+                                        </label>
+                                        &nbsp;&nbsp;&nbsp;
 
-    
-    <script src="pe.js"></script>
-    <script src="graphBairros2.js"></script>
-    <script src="main.js"></script>
-  </body>
+                                        <label for="colorByMenu">Colorir por:</label>
+                                        <select name="colorByMenu" id="colorSelect">
+                                                <option value="cluster">Cluster ID</option>
+                                                <option value="cases">Active Cases</option>
+                                                <option value="casesPC">Active Cases Per Capita</option>
+						<option value="sobre60">Prob. Sobrevivencia 60 anos</option>
+						<option value="rdpct">Renda per capta média náo nula</option>
+                                        </select>
+
+                                        <label for="dateByMenu">Current Date:</label>
+                                        <select name="dateByMenu" id="dateSelect"></select>
+                                </br>      
+
+                                        <label>
+                                                <input type="checkbox" id="singletonsCB" class="filled-in"
+                                                        name="singletonCB" checked></input>
+                                                <span>Show Singletons</span>
+                                        </label>
+
+                                        <label>
+                                                <input type="checkbox" id="polygonsCB" class="filled-in"
+                                                        name="polygonCB">
+                                                <span>Show Polygons</span>
+                                        </label>
+
+                                        <label>
+                                                <input type="checkbox" id="graphCB" class="filled-in"
+                                                        name="graphCB" checked>
+                                                <span>Show graph</span>
+                                        </label>
+
+                                        <label>
+                                                <input type="checkbox" id="showBoundariesCB" class="filled-in"
+                                                        name="showBoundariesCB" checked>
+                                                <span>Show Boundaries</span>
+                                        </label>
+
+                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+                                </div>
+                        </header>
+                        <div id="map"></div>
+                </article>
+
+                <aside>
+                        <div id="barchartDiv" class="two_one"></div>
+                        </br>
+                        </br>
+                        <div id="scatterDiv" class="two_two"></div>
+                </aside>
+        </div>
+        <script src="../lib/d3.v5.min.js"></script>
+        <script src="../lib/turf.min.js"></script>
+        <script src="../lib/leaflet.js"></script>
+        <script src="../lib/leaflet.polylineDecorator.js"></script>
+        <script src="../lib/RowChart.js"></script>
+        <script src="../lib/BarChartWidget.js"></script>
+        <script src="../lib/scat.js"></script>
+        <script src="../lib/ScatterplotWidget.js"></script>
+        <script src="../data/graphBairrosEcon.js"></script>
+        <script src="../data/boundariesBairros.js"></script>
+	<script src="../data/boundariesMunPE.js"></script>
+
+        <script src="main.js"></script>
+</body>
+
 </html>
