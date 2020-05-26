@@ -24,7 +24,7 @@ let option;
 let threshold               = 0;
 let showSingletons          = true;
 let showPolygons            = false;
-let showClusterRiskExposure = false;
+let showGraph               = false;
 let showBoundaries          = false;
 let defaultStyle = {
     "weight" : 0.5,
@@ -223,33 +223,42 @@ function updateNodes(){
     for(let name in nodes){
 	let node = nodes[name];
 	var circle = nodeMarkers[node.name];
-
-	circle.options.fillColor = circle.options.clusterColor;	
-	
-	if(!showSingletons){
-	    if(circle.options.singleton){
-		circle.removeFrom(map);
-	    }
-	    else{
-		circle.removeFrom(map);
-		circle.addTo(map);
-		circle.bringToFront();
-	    }
-	}
-	else{
-	    circle.removeFrom(map);
-	    circle.addTo(map);
-	    circle.bringToFront();
-	}
+	circle.removeFrom(map);
     }
+
+    
+    if(showGraph){
+	
+	clusters.forEach(cl=>{
+	    cl.nodes.forEach(n=>{
+		var circle = nodeMarkers[n];
+		circle.options.fillColor = circle.options.clusterColor;
+		if(cl.size > 1 || showSingletons){
+		    circle.addTo(map);
+		    circle.bringToFront();
+		}
+	    });
+	});
+	
+	
+    }
+ 
+  
 }
 
 function updateLinks(){
+
+    for(let key in lines){
+	let line = lines[key];
+	line.removeFrom(map);
+	line.decorator.removeFrom(map);
+    }
+    
     //add lines
     let opacityScale = d3.scaleLinear().domain([0,100]).range([0,1]);
     for(let key in lines){
 	let line = lines[key];
-	if(line.options.value > threshold){
+	if(showGraph && line.options.value > threshold){
 	    //
 	    //let clusterInfected = nodeMarkers[origin].options.clusterInfected;
 	    line.options.color = "gray";
@@ -261,10 +270,7 @@ function updateLinks(){
 	    //line.decorator.addTo(map);
 	    line.decorator.bringToBack();
 	}
-	else{
-	    line.removeFrom(map);
-	    line.decorator.removeFrom(map);
-	}
+
     }
 }
 
@@ -388,9 +394,10 @@ function loadInterface(){
 	
     });
 
-    d3.select("#polygonsRECB").on("change",function(){
-	showClusterRiskExposure = this.checked;
-	updatePolygons();
+    d3.select("#graphCB").on("change",function(){
+	showGraph = this.checked;
+	updateLinks();
+	updateNodes();
     });
     
     //////// MAP
@@ -565,20 +572,7 @@ function updateGroupIds(){
 	    }
 	    else{
 		//POLYGON
-		let opt;
-		if(showClusterRiskExposure){
-		    let colorScale = d3.scaleQuantize().domain(riskExposureColorScale.domain()) ;
-		    if(clusterInfected){
-			colorScale.range(d3.schemeReds[5]);
-		    }
-		    else{
-			colorScale.range(d3.schemeBlues[5]);
-		    }
-		    opt = {color: colorScale(clusterRiskExposure)};
-		}
-		else{
-		    opt = clusterInfected?{color: 'red'}:{color: 'blue'};
-		}
+		let opt = clusterInfected?{color: 'red'}:{color: 'blue'};
 		opt['opacity'] = 1;
 		opt['riskExposure'] = clusterRiskExposure;
 		opt['infected'] = clusterInfected;
@@ -616,21 +610,7 @@ function updatePolygons(){
 	let color = undefined;
 	let polygon = cluster.polygon;
 	if(polygon != undefined){
-	    if(showClusterRiskExposure){
-		let colorScale = d3.scaleQuantize().domain(riskExposureColorScale.domain()) ;
-		if(cluster.infected){
-		    colorScale.range(d3.schemeReds[5]);
-		    color = colorScale(cluster.forceOfInfection);
-		}
-		else{
-		    colorScale.range(d3.schemeBlues[5]);
-		    color = colorScale(cluster.riskExposure);
-		}
-	    }
-	    else{
-		color = cluster.infected?'red':'blue';
-	    }
-
+	    color = cluster.infected?'red':'blue';
 	    polygon.options.color = color;
 	    
 	    if(showPolygons){
@@ -850,6 +830,7 @@ buildCoords();
 // default values
 threshold      = (+d3.select("#threshold").node().value)/10;
 showPolygons   = (d3.select("#polygonsCB").node().checked);
+showGraph      = (d3.select("#graphCB").node().checked);
 showBoundaries = (d3.select("#showBoundariesCB").node().checked);
 d3.select("#thSliderValue").text((threshold) + "%");
 option = 'cluster';
