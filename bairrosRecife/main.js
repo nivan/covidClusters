@@ -115,12 +115,7 @@ function loadBarChart(){
 
 function scatterPointSelected(id){
     let selCluster = clusters[id];
-    if(selCluster.polygon){
-	selCluster.polygon.openPopup();
-    }
-    else{
-	nodeMarkers[selCluster.nodes[0]].openPopup()
-    }
+    nodeMarkers[selCluster.nodes[0]].openPopup()
 }
 
 function loadScatterplot(){
