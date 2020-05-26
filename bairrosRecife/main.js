@@ -141,7 +141,19 @@ function loadScatterplot(){
 		{"text":"Active Cases Per Capita","value":"casesPC"},
 		{"text":"Population","value":"population"},
 		{"text":"Risk Exposure","value":"riskExposure"},
-		{"text":"Force of Infection","value":"foi"}];
+		{"text":"Force of Infection","value":"foi"},
+		{"text":"Prob. Sobrevivência 60 anos","value":"sobre60"},
+		{"text":"Renda per capita não nula","value":"rdpct"},
+		{"text":"Ocupados no setor agropecuário","value":"pagro"},
+		{"text":"Ocupados no setor comércio","value":"pcom"},
+		{"text":"Ocupados no setor construção","value":"pconstr"},
+		{"text":"Ocupados no setor extrativo","value":"pextr"},
+		{"text":"Ocupados no setor serviços","value":"pserv"},
+		{"text":"Ocupados no setor industrial up","value":"psiup"},
+		{"text":"Ocupados no setor ind. tranformação","value":"ptransf"},
+		{"text":"Per. dom. vul. dependentes de idoso","value":"prmaxidoso"},
+		{"text":"Pop. em dom. vul. com idoso","value":"domvulneracomid"}
+	       ];
     opts.sort(function(x,y){
 	let nameA = x.text;
 	let nameB = y.text;
@@ -188,6 +200,23 @@ function getClusterIndicator(cluster, indName){
 	    return cluster.forceOfInfection;
 	else
 	    return undefined;
+    }
+    else if(indName == 'rdpct' || indName == 'domvulneracomid'){
+	let result = 0;
+	cluster.nodes.forEach(n=>{
+	    let node = nodes[n];
+	    result += ((node.population_2010/cluster.population)*node[indName]["mean"]);
+	});
+	return result;
+    }
+    else if(indName == 'pagro' || indName == 'pcom' || indName == 'pconstr'
+	    || indName == 'pextr' || indName == 'pserv' || indName == 'psiup' || indName == 'ptransf' || indName == "prmaxidoso"){
+	let result = 0;
+	cluster.nodes.forEach(n=>{
+	    let node = nodes[n];
+	    result += ((node.population_2010/cluster.population)*node[indName]["mean"]/100);
+	});
+	return result;
     }
     else{
 	debugger
@@ -338,14 +367,14 @@ function updateBoundaries(){
 		    });
 		});
 	    }
-	    else if(option == 'sobre60'){
-		let domain = d3.extent(nodesList,d=>d.sobre60);
+	    else{
+		let domain = d3.extent(nodesList,d=>d[option]["mean"]);
 		casosPCColorScale.domain(domain);
 		clusters.forEach(cluster=>{
 		    cluster.nodes.forEach(n => {
 			let node = nodes[n];
 			if(cluster.size > 1 || showSingletons){
-			    let color = casosPCColorScale(node.sobre60);
+			    let color = casosPCColorScale(node[option]["mean"]);
 			    node.boundary.options.fillColor   = color;
 			    node.boundary.options.fillOpacity = 0.8;
 			    node.boundary.options.weight      = 1;
@@ -356,14 +385,36 @@ function updateBoundaries(){
 		    });
 		});
 	    }
-	    
+    
 	    
 	}
     }
 }
 
 function loadInterface(){
+    //
+    let colorByOptions = [{"value":"cluster","text":"Cluster ID"},
+			  {"value":"cases","text":"Active Cases"},
+			  {"value":"casesPC","text":"Active Cases Per Capita"},
+			  {"value":"sobre60","text":"Prob. Sobrevivencia 60 anos"},
+			  {"value":"rdpct","text":"Renda per capta média não nula"},
+			  {"text":"Ocupados no setor agropecuário","value":"pagro"},
+			  {"text":"Ocupados no setor comércio","value":"pcom"},
+			  {"text":"Ocupados no setor construção","value":"pconstr"},
+			  {"text":"Ocupados no setor extrativo","value":"pextr"},
+			  {"text":"Ocupados no setor serviços","value":"pserv"},
+			  {"text":"Ocupados no setor industrial up","value":"psiup"},
+			  {"text":"Ocupados no setor ind. tranformação","value":"ptransf"},
+			  {"text":"Per. dom. vul. dependentes de idoso","value":"prmaxidoso"},
+			  {"text":"Pop. em dom. vul. com idoso","value":"domvulneracomid"}];
     
+    d3.select("#colorSelect")
+	.selectAll("option")
+	.data(colorByOptions)
+	.enter()
+	.append("option")
+	.attr("value",d=>d.value)
+	.text(d=>d.text)
     
     //////// CONTROLS
     d3.select("#threshold").on("change",function(v){
@@ -725,11 +776,20 @@ function buildCoords(){
 	    "cluster": undefined,
 	    "active_cases": cases[currentDate],
 	    'est_active_cases': estCases[currentDate],
-	    "sobre60":node["SOBRE"]["SOBRE60"]["mean"],
+	    "sobre60":node["SOBRE"]["SOBRE60"],
+	    "rdpct":node["RDPCT"],
+	    "pagro":node["P_AGRO"],
+	    "pcom":node["P_COM"],
+	    "pconstr":node["P_CONSTR"],
+	    "pextr":node["P_EXTR"],
+	    "pserv":node["P_SERV"],
+	    "psiup":node["P_SIUP"],
+	    "ptransf":node["P_TRANSF"],
+	    "prmaxidoso":node["T_RMAXIDOSO"],
+	    "domvulneracomid":node["DOMVULNERACOMID"],
 	    inEdges: {},
 	    outEdges: {}
 	};
-
 	//
 	totalPopulation += nodes[node.name].population_2010;
     });
