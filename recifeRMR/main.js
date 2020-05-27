@@ -472,7 +472,6 @@ function loadInterface(){
 	let item = layer._layers[i];
 	dictLayer[item.feature.properties.name] = item;
     }
-
     
     let missingNames = ["Abreu e Lima","Araçoiaba", "Cabo de Santo Agostinho", "Camaragibe", "Ilha de Itamaracá", "Itapissuma", "Jaboatão dos Guararapes", "Moreno", "Olinda", "Paulista", "São Lourenço da Mata"];
     missingNames.forEach(name=>{
@@ -483,7 +482,7 @@ function loadInterface(){
 	    console.log(name);
 	}
     });
-    debugger
+
     
     //
     loadBarChart();
@@ -698,11 +697,11 @@ function updateThreshold() {
     //
     updateGroupIds();
     //
-    updateBoundaries();
-    //
     updateLinks();
     //
     updatePolygons();
+    //
+    updateBoundaries();
     //
     updateNodes();
     //

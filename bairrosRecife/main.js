@@ -680,11 +680,11 @@ function updateThreshold() {
     //
     updateGroupIds();
     //
-    updateBoundaries();
-    //
     updateLinks();
     //
     updatePolygons();
+    //
+    updateBoundaries();
     //
     updateNodes();
     //
