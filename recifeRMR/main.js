@@ -338,6 +338,8 @@ function updateBoundaries(){
 	nodesList.push(node);
 	node.boundary.removeFrom(map);
     }
+    //
+    clearLegend();
     
     if(showBoundaries){
 	//
@@ -418,6 +420,8 @@ function updateBoundaries(){
     
 	    
 	}
+
+	//update legends
     }
 }
 
