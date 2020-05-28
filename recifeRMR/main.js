@@ -117,6 +117,12 @@ function barChartOptionChanged(opt){
     barChart.setData(data);
 }
 
+function barSelectedCallback(d){
+    let node = nodes[d];
+    node.openPopup();
+    
+}
+
 function loadBarChart(){
     
     //
@@ -130,6 +136,7 @@ function loadBarChart(){
     let myDiv = d3.select("#barchartDiv");
 
     barChart = new BarChartWidget(d3.select("#barchartDiv"),opts,"barChart",barChartOptionChanged);
+    barChart.setSelectionCallback(barSelectedCallback);
 
     //
     barChartOptionChanged(barChart.getSelectedOption());
