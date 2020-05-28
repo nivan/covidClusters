@@ -97,6 +97,22 @@ function barChartOptionChanged(opt){
 	}
 	barChart.setXAxisLabel('Risk Exposure');
     }
+    else if(opt == 'rendaPC'){
+	for(let name in nodes){
+	    let node = nodes[name];
+	    data.push({'key':name,'value':node.rdpc["mean"]});
+	}
+	barChart.setXAxisLabel('Per Capita Income');
+    }
+    else if(opt == 'rendaPCNZ'){
+	for(let name in nodes){
+	    let node = nodes[name];
+	    data.push({'key':name,'value':node.rdpct["mean"]});
+	}
+	barChart.setXAxisLabel('Per Capita Income (NZ)');
+    }
+
+    
     data = data.sort(function(a,b){return b.value-a.value}).slice(0,7);
     barChart.setData(data);
 }
@@ -105,8 +121,10 @@ function loadBarChart(){
     
     //
     let opts = [{"text":"Active Cases","value":"cases"},
-    		{"text":"Active Cases Per Capita","value":"casesPC"}//,
-    		//{"text":"Risk Exposure","value":"riskExposure"}
+    		{"text":"Active Cases Per Capita","value":"casesPC"},
+    		//{"text":"Risk Exposure","value":"riskExposure"},
+		{"text":"Renda per Capita","value":"rendaPC"},
+		{"text":"Renda per Capita não nula","value":"rendaPCNZ"}
 	       ];
 
     let myDiv = d3.select("#barchartDiv");
@@ -143,6 +161,7 @@ function loadScatterplot(){
 		{"text":"Risk Exposure","value":"riskExposure"},
 		{"text":"Force of Infection","value":"foi"},
 		{"text":"Prob. Sobrevivência 60 anos","value":"sobre60"},
+		{"text":"Renda per capita","value":"rdpc"},
 		{"text":"Renda per capita não nula","value":"rdpct"},
 		{"text":"Ocupados no setor agropecuário","value":"pagro"},
 		{"text":"Ocupados no setor comércio","value":"pcom"},
@@ -210,9 +229,7 @@ function getClusterIndicator(cluster, indName){
 	return result;
     }
     else if(indName == 'pagro' || indName == 'pcom' || indName == 'pconstr'
-	    || indName == 'pextr' || indName == 'pserv' || indName == 'psiup' || indName == 'ptransf' || indName == "prmaxidoso" || indName == "sobre60"){
-
-	
+	    || indName == 'pextr' || indName == 'pserv' || indName == 'psiup' || indName == 'ptransf' || indName == "prmaxidoso" || indName == "sobre60" || indName == "rdpc"){
 	let result = 0;
 	cluster.nodes.forEach(n=>{
 	    let node = nodes[n];
@@ -314,6 +331,7 @@ function updateBoundaries(){
 	nodesList.push(node);
 	node.boundary.removeFrom(map);
     }
+    
     if(showBoundaries){
 	//
 	if(option == 'cluster'){
@@ -402,7 +420,8 @@ function loadInterface(){
 			  {"value":"cases","text":"Active Cases"},
 			  {"value":"casesPC","text":"Active Cases Per Capita"},
 			  {"value":"sobre60","text":"Prob. Sobrevivencia 60 anos"},
-			  {"value":"rdpct","text":"Renda per capta média não nula"},
+			  {"value":"rdpc","text":"Renda per capta"},
+			  {"value":"rdpct","text":"Renda per capta não nula"},
 			  {"text":"Ocupados no setor agropecuário","value":"pagro"},
 			  {"text":"Ocupados no setor comércio","value":"pcom"},
 			  {"text":"Ocupados no setor construção","value":"pconstr"},
@@ -456,6 +475,7 @@ function loadInterface(){
 	updateLinks();
 	updateNodes();
     });
+
     
     //////// MAP
     map = L.map('map').setView([-8.07792545411762, -34.89995956420899], 12);
@@ -471,25 +491,46 @@ function loadInterface(){
 	let item = layerBoundaries._layers[key]
 	nodes[item.feature.properties.bairro_nome].boundary = item;
     }
-    //municipios
-    let layer = L.geoJson(munPE);
-    let dictLayer = {};
-    for(let i in layer._layers){
-	let item = layer._layers[i];
-	dictLayer[item.feature.properties.name] = item;
-    }
-    
-    let missingNames = ["Abreu e Lima","Araçoiaba", "Cabo de Santo Agostinho", "Camaragibe", "Ilha de Itamaracá", "Itapissuma", "Jaboatão dos Guararapes", "Moreno", "Olinda", "Paulista", "São Lourenço da Mata"];
-    missingNames.forEach(name=>{
-	if(name in dictLayer){
-	    nodes[name].boundary = dictLayer[name];
+    if(!bairrosMode){
+	//municipios
+	let layer = L.geoJson(munPE);
+	let dictLayer = {};
+	for(let i in layer._layers){
+	    let item = layer._layers[i];
+	    dictLayer[item.feature.properties.name] = item;
 	}
-	else{
-	    console.log(name);
-	}
-    });
 
-    
+	let missingNames = ["Abreu e Lima","Araçoiaba", "Cabo de Santo Agostinho", "Camaragibe", "Ilha de Itamaracá", "Itapissuma", "Jaboatão dos Guararapes", "Moreno", "Olinda", "Paulista", "São Lourenço da Mata"];
+	missingNames.forEach(name=>{
+	    if(name in dictLayer){
+		nodes[name].boundary = dictLayer[name];
+	    }
+	    else{
+		console.log(name);
+	    }
+	});
+    }
+
+    //legend
+    var legend = L.control({position: 'bottomright'});
+    legend.onAdd = function (map) {
+
+	var div = L.DomUtil.create('div', 'info legend');
+	div.setAttribute("id","legendDiv");
+        //     grades = [0, 10, 20, 50, 100, 200, 500, 1000],
+        //     labels = [];
+
+	// // loop through our density intervals and generate a label with a colored square for each interval
+	// for (var i = 0; i < grades.length; i++) {
+        //     div.innerHTML +=
+	// 	'<i style="background:' + getColor(grades[i] + 1) + '"></i> ' +
+	// 	grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+	// }
+
+	return div;
+    };
+    legend.addTo(map);
+
     //
     loadBarChart();
 
@@ -801,6 +842,7 @@ function buildCoords(){
 	    "active_cases": cases[currentDate],
 	    'est_active_cases': estCases[currentDate],
 	    "sobre60":node["SOBRE"]["SOBRE60"],
+	    "rdpc":node["RDPC"].RDPC,
 	    "rdpct":node["RDPCT"],
 	    "pagro":node["P_AGRO"],
 	    "pcom":node["P_COM"],
