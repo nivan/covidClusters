@@ -340,7 +340,8 @@ function updateBoundaries(){
 		    cluster.nodes.forEach(n => {
 			let node = nodes[n];
 			if(cluster.size > 1 || showSingletons){
-			    let color = casosConfirmadosColorScale(node.active_cases);
+			    let coeff = node.active_cases;
+			    let color = coeff==0?'white':casosConfirmadosColorScale(coeff);
 			    node.boundary.options.fillColor   = color;
 			    node.boundary.options.fillOpacity = 0.8;
 			    node.boundary.options.weight      = 1;
@@ -358,7 +359,8 @@ function updateBoundaries(){
 		    cluster.nodes.forEach(n => {
 			let node = nodes[n];
 			if(cluster.size > 1 || showSingletons){
-			    let color = casosPCColorScale(node.active_cases/node.population_2010);
+			    let coeff = node.active_cases/node.population_2010;
+			    let color = coeff==0?'white':casosPCColorScale(coeff);
 			    node.boundary.options.fillColor   = color;
 			    node.boundary.options.fillOpacity = 0.8;
 			    node.boundary.options.weight      = 1;
@@ -376,7 +378,8 @@ function updateBoundaries(){
 		    cluster.nodes.forEach(n => {
 			let node = nodes[n];
 			if(cluster.size > 1 || showSingletons){
-			    let color = casosPCColorScale(node[option]["mean"]);
+			    let coeff = node[option]["mean"];
+			    let color = coeff==0?'white':casosPCColorScale(coeff);
 			    node.boundary.options.fillColor   = color;
 			    node.boundary.options.fillOpacity = 0.8;
 			    node.boundary.options.weight      = 1;
@@ -408,7 +411,8 @@ function loadInterface(){
 			  {"text":"Ocupados no setor industrial up","value":"psiup"},
 			  {"text":"Ocupados no setor ind. tranformação","value":"ptransf"},
 			  {"text":"Per. dom. vul. dependentes de idoso","value":"prmaxidoso"},
-			  {"text":"Pop. em dom. vul. com idoso","value":"domvulneracomid"}];
+			  {"text":"Pop. em dom. vul. com idoso","value":"domvulneracomid"},
+			  {"text":"Per da pop. em dom. com 2 pessoas por dormitório","value":"tdens"}];
     
     d3.select("#colorSelect")
 	.selectAll("option")
@@ -807,6 +811,7 @@ function buildCoords(){
 	    "ptransf":node["P_TRANSF"],
 	    "prmaxidoso":node["T_RMAXIDOSO"],
 	    "domvulneracomid":node["DOMVULNERACOMID"],
+	    "tdens":node["T_DENS"],
 	    inEdges: {},
 	    outEdges: {}
 	};
