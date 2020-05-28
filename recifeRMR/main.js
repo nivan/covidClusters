@@ -59,17 +59,23 @@ function scatterplotOptionChanged(opt) {
 		let mydata = [];
 		clusters.forEach((cluster, i) => {
 			if (cluster.size > 1 || showSingletons) {
+				//
+				let populations = cluster.nodes.map((d,i)=>{
+					return    [nodes[d].population_2010,d]
+				});
+				populations.sort(function(a,b){return b[0]-a[0]});
+				let mostPopulous = populations[0][1];
+				//
 				let x = getClusterIndicator(cluster, opt[0]);
 				let y = getClusterIndicator(cluster, opt[1]);
 				if (x != undefined && y != undefined) {
-					mydata.push([x, y, cluster.color, i]);
+					mydata.push([x, y, cluster.color, i, mostPopulous]);
 				}
 			}
 		});
 		//
 		scatterplot.setXAxisLabel(opt[2]);
 		scatterplot.setYAxisLabel(opt[3]);
-		console.log(mydata.length);
 		scatterplot.setData(mydata);
 	}
 }
@@ -442,7 +448,9 @@ function updateBoundaries() {
 	}
 }
 function updateLegend(scale){
-			//
+	//
+	//d3.select("#legendDiv")
+	//.selectAll("i").;		
 		//update legend
 		//     grades = [0, 10, 20, 50, 100, 200, 500, 1000],
 		//     labels = [];
