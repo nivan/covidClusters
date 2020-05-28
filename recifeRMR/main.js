@@ -210,7 +210,9 @@ function getClusterIndicator(cluster, indName){
 	return result;
     }
     else if(indName == 'pagro' || indName == 'pcom' || indName == 'pconstr'
-	    || indName == 'pextr' || indName == 'pserv' || indName == 'psiup' || indName == 'ptransf' || indName == "prmaxidoso"){
+	    || indName == 'pextr' || indName == 'pserv' || indName == 'psiup' || indName == 'ptransf' || indName == "prmaxidoso" || indName == "sobre60"){
+
+	
 	let result = 0;
 	cluster.nodes.forEach(n=>{
 	    let node = nodes[n];
