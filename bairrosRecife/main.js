@@ -60,10 +60,10 @@ function scatterplotOptionChanged(opt) {
 		clusters.forEach((cluster, i) => {
 			if (cluster.size > 1 || showSingletons) {
 				//
-				let populations = cluster.nodes.map((d,i)=>{
-					return    [nodes[d].population_2010,d]
+				let populations = cluster.nodes.map((d, i) => {
+					return [nodes[d].population_2010, d]
 				});
-				populations.sort(function(a,b){return b[0]-a[0]});
+				populations.sort(function (a, b) { return b[0] - a[0] });
 				let mostPopulous = populations[0][1];
 				//
 				let x = getClusterIndicator(cluster, opt[0]);
@@ -117,7 +117,7 @@ function barChartOptionChanged(opt) {
 		}
 		barChart.setXAxisLabel('Per Capita Income (NZ)');
 	}
-	else{
+	else {
 		for (let name in nodes) {
 			let node = nodes[name];
 			data.push({ 'key': name, 'value': node[opt.value]["mean"] });
@@ -265,7 +265,7 @@ function getClusterIndicator(cluster, indName) {
 	}
 	else if (indName == 'pagro' || indName == 'pcom' || indName == 'pconstr' || indName == 'tdens'
 		|| indName == 'pextr' || indName == 'pserv' || indName == 'psiup' || indName == 'ptransf' || indName == "prmaxidoso" || indName == "sobre60" || indName == "rdpc"
-		|| indName == 'idhm' || indName == 'idhme' || indName == 'idhml'|| indName == 'idhmr') {
+		|| indName == 'idhm' || indName == 'idhme' || indName == 'idhml' || indName == 'idhmr') {
 		let result = 0;
 		cluster.nodes.forEach(n => {
 			let node = nodes[n];
@@ -361,6 +361,7 @@ function updateLinks() {
 function updateBoundaries() {
 
 	//
+	let showLegend = false;
 	let nodesList = [];
 	for (let n in nodes) {
 		let node = nodes[n];
@@ -368,7 +369,7 @@ function updateBoundaries() {
 		node.boundary.removeFrom(map);
 	}
 	//clear boundaries
-
+	let scale = undefined;
 	if (showBoundaries) {
 		//
 		if (option == 'cluster') {
@@ -388,15 +389,17 @@ function updateBoundaries() {
 			});
 		}
 		else {
+			showLegend = true;
+			scale = d3.scaleQuantize().range(['#ffffe5', '#fff7bc', '#fee391', '#fec44f', '#fe9929', '#ec7014', '#cc4c02', '#8c2d04']);
 			if (option == 'cases') {
 				let domain = d3.extent(nodesList, d => d.active_cases);
-				casosConfirmadosColorScale.domain(domain);
+				scale.domain(domain);
 				clusters.forEach(cluster => {
 					cluster.nodes.forEach(n => {
 						let node = nodes[n];
 						if (cluster.size > 1 || showSingletons) {
 							let coeff = node.active_cases;
-							let color = coeff == 0 ? 'white' : casosConfirmadosColorScale(coeff);
+							let color = coeff == 0 ? 'white' : scale(coeff);
 							node.boundary.options.fillColor = color;
 							node.boundary.options.fillOpacity = 0.8;
 							node.boundary.options.weight = 1;
@@ -409,13 +412,13 @@ function updateBoundaries() {
 			}
 			else if (option == 'casesPC') {
 				let domain = d3.extent(nodesList, d => d.active_cases / d.population_2010);
-				casosPCColorScale.domain(domain);
+				scale.domain(domain);
 				clusters.forEach(cluster => {
 					cluster.nodes.forEach(n => {
 						let node = nodes[n];
 						if (cluster.size > 1 || showSingletons) {
 							let coeff = node.active_cases / node.population_2010;
-							let color = coeff == 0 ? 'white' : casosPCColorScale(coeff);
+							let color = coeff == 0 ? 'white' : scale(coeff);
 							node.boundary.options.fillColor = color;
 							node.boundary.options.fillOpacity = 0.8;
 							node.boundary.options.weight = 1;
@@ -428,13 +431,13 @@ function updateBoundaries() {
 			}
 			else {
 				let domain = d3.extent(nodesList, d => d[option]["mean"]);
-				casosPCColorScale.domain(domain);
+				scale.domain(domain);
 				clusters.forEach(cluster => {
 					cluster.nodes.forEach(n => {
 						let node = nodes[n];
 						if (cluster.size > 1 || showSingletons) {
 							let coeff = node[option]["mean"];
-							let color = coeff == 0 ? 'white' : casosPCColorScale(coeff);
+							let color = coeff == 0 ? 'white' : scale(coeff);
 							node.boundary.options.fillColor = color;
 							node.boundary.options.fillOpacity = 0.8;
 							node.boundary.options.weight = 1;
@@ -448,26 +451,65 @@ function updateBoundaries() {
 
 		}
 
-
+		updateLegend(scale, showLegend);
 	}
 }
-function updateLegend(scale){
-	//
-	//d3.select("#legendDiv")
-	//.selectAll("i").;		
-		//update legend
-		//     grades = [0, 10, 20, 50, 100, 200, 500, 1000],
-		//     labels = [];
+function updateLegend(scale) {
+		//
+	let canvas = d3.select("#legendDiv");
+	canvas.selectAll("div")
+		.remove();
 
-		// // loop through our density intervals and generate a label with a colored square for each interval
-		// for (var i = 0; i < grades.length; i++) {
-		//     div.innerHTML +=
-		// 	'<i style="background:' + getColor(grades[i] + 1) + '"></i> ' +
-		// 	grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
-		// }
+	if(scale == undefined)
+	return;
+
+	//
+	let legendData = [];//[{ "color": "white", "label": "0" }];
+	let values = scale.thresholds();
+	let colors = scale.range();
+	let formatter = d3.format(".2s");//d3.format(".3e");
+	
+	values.forEach((d, i) => {
+		if(i == 0){
+			legendData.push({ "color": colors[i], "label": "<" + formatter(values[i])});
+		}
+		else{
+			legendData.push({ "color": colors[i], "label": "[" + formatter(values[i-1]) + "; " + formatter(values[i]) + "]" });
+		}
+	});
+	legendData.push({ "color": colors[values.length], "label": "[" + formatter(values[values.length-1]) + "; ∞]" });
+	legendData.reverse();
+
+
+	let elements = canvas.selectAll("div")
+		.data(legendData)
+		.enter()
+		.append("div")
+		.selectAll("i")
+		.data(d => [d])
+		.enter();
+
+	elements
+		.append("i")
+		.attr("style", d => "border: 1px solid #000;background: " + d.color);
+	elements
+		.append("label")
+		.text(d => d.label);
+
+	//	 .attr("style",function(d){debugger});
+
+	//update legend
+	//;
+
+	// loop through our density intervals and generate a label with a colored square for each interval
+	// for (var i = 0; i < grades.length; i++) {
+	//     div.innerHTML +=
+	// 	'<i style="background:' + getColor(grades[i] + 1) + '"></i> ' +
+	// 	grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+	// }
 }
 
-function boundaryClicked(cluster){
+function boundaryClicked(cluster) {
 	//
 	let index = clusters.indexOf(cluster);
 	scatterplot.setSelected(index);
@@ -576,9 +618,9 @@ function loadInterface() {
 	}
 
 	//
-	for(let n in nodes){
+	for (let n in nodes) {
 		let node = nodes[n];
-		node.boundary.on("click",function(){boundaryClicked(node.cluster)});
+		node.boundary.on("click", function () { boundaryClicked(node.cluster) });
 	}
 
 	//legend

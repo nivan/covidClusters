@@ -72,14 +72,28 @@
                         background: #ffffff;
                 }
 
+                .info {
+                        padding: 6px 8px;
+                        font: 14px/16px Arial, Helvetica, sans-serif;
+                        background: white;
+                        background: rgba(255, 255, 255, 0.8);
+                        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+                        border-radius: 5px;
+                }
+
+                .info h4 {
+                        margin: 0 0 5px;
+                        color: #777;
+                }
+
                 .legend {
                         line-height: 18px;
                         color: #555;
                 }
-                
+
                 .legend i {
                         width: 18px;
-                        height: 18px;
+                        height: 16px;
                         float: left;
                         margin-right: 8px;
                         opacity: 0.7;
@@ -131,12 +145,12 @@
                                         &nbsp;&nbsp;&nbsp;
 
                                         <label for="colorByMenu">Colorir por:</label>
-                                        <select name="colorByMenu" id="colorSelect">                                            
+                                        <select name="colorByMenu" id="colorSelect">
                                         </select>
 
                                         <label for="dateByMenu">Current Date:</label>
                                         <select name="dateByMenu" id="dateSelect"></select>
-                                </br>      
+                                        </br>
 
                                         <label>
                                                 <input type="checkbox" id="singletonsCB" class="filled-in"
@@ -151,8 +165,8 @@
                                         </label>
 
                                         <label>
-                                                <input type="checkbox" id="graphCB" class="filled-in"
-                                                        name="graphCB" checked>
+                                                <input type="checkbox" id="graphCB" class="filled-in" name="graphCB"
+                                                        checked>
                                                 <span>Show graph</span>
                                         </label>
 
