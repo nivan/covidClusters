@@ -31,7 +31,7 @@
                         border: 1px solid #ffffff;
                         border-radius: 7pt;
                         background: #ffffff;
-                        -webkit-flex: 3 1 75%;
+                        -webkit-flex: 3 1 70%;
                         flex: 3 1 55%;
                         -webkit-order: 2;
                         order: 2;
@@ -70,6 +70,33 @@
                         border: 1px solid #000000;
                         font: 12px Helvetica;
                         background: #ffffff;
+                }
+
+                .info {
+                        padding: 6px 8px;
+                        font: 14px/16px Arial, Helvetica, sans-serif;
+                        background: white;
+                        background: rgba(255, 255, 255, 0.8);
+                        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+                        border-radius: 5px;
+                }
+
+                .info h4 {
+                        margin: 0 0 5px;
+                        color: #777;
+                }
+
+                .legend {
+                        line-height: 18px;
+                        color: #555;
+                }
+
+                .legend i {
+                        width: 18px;
+                        height: 16px;
+                        float: left;
+                        margin-right: 8px;
+                        opacity: 0.7;
                 }
 
                 /* Too narrow to support three columns */
@@ -119,16 +146,11 @@
 
                                         <label for="colorByMenu">Colorir por:</label>
                                         <select name="colorByMenu" id="colorSelect">
-                                                <option value="cluster">Cluster ID</option>
-                                                <option value="cases">Active Cases</option>
-                                                <option value="casesPC">Active Cases Per Capita</option>
-						<option value="sobre60">Prob. Sobrevivencia 60 anos</option>
-						<option value="rdpct">Renda per capta média náo nula</option>
                                         </select>
 
                                         <label for="dateByMenu">Current Date:</label>
                                         <select name="dateByMenu" id="dateSelect"></select>
-                                </br>      
+                                        </br>
 
                                         <label>
                                                 <input type="checkbox" id="singletonsCB" class="filled-in"
@@ -143,8 +165,8 @@
                                         </label>
 
                                         <label>
-                                                <input type="checkbox" id="graphCB" class="filled-in"
-                                                        name="graphCB" checked>
+                                                <input type="checkbox" id="graphCB" class="filled-in" name="graphCB"
+                                                        checked>
                                                 <span>Show graph</span>
                                         </label>
 
@@ -178,9 +200,8 @@
         <script src="../lib/ScatterplotWidget.js"></script>
         <script src="../data/graphBairrosEcon2.js"></script>
         <script src="../data/boundariesBairros.js"></script>
-	<script src="../data/boundariesMunPE.js"></script>
 
         <script src="main.js"></script>
 </body>
 
-</html> 
+</html>
