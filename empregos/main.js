@@ -62,6 +62,10 @@ function updateBoundaries() {
 		boundary.options.weight = 1;
 		boundary.options.color = "gray";
 		boundary.addTo(map);
+
+		//
+		let str = "Bairro: " + bairro + "</br>" + "Total Atividades: " + coeff;
+		boundary.bindPopup(str);
 		boundary.bringToBack()
 	}
 
