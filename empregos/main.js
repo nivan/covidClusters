@@ -291,7 +291,7 @@ function updateThreshold() {
 // d3.select("#thSliderValue").text((threshold) + "%");
 // option = 'cluster';
 
-d3.csv("../data/atividades.csv").then(function (data) {
+d3.csv("../data/test.csv").then(function (data) {
 	//
 	let aux = data.map(d => d.Bairro);
 	aux.forEach(d => {
@@ -312,7 +312,7 @@ d3.csv("../data/atividades.csv").then(function (data) {
 		}
 
 		//
-		mapActivityBairro[item.Ativ_PE]["bairros"][item.Bairro] = +item["Qtd Vínculos Ativos"];
+		mapActivityBairro[item.Ativ_PE]["bairros"][item.Bairro] += (+item["Qtd Vínculos Ativos"]);
 	});
 	//
 	loadInterface();
