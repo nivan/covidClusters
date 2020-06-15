@@ -59,10 +59,13 @@ function updateLegend(scale) {
     let colors = scale.range();
 	
 	values.forEach((d, i) => {
-	    legendData.push({ "color": colors[i], "label": "Categoria " + values[i]});
+	    legendData.push({ "color": colors[i], "label": "Classe " + values[i]});
 	});
 
+    canvas.append("b")
+	.text("Bandeiras");
 
+    
 	let elements = canvas.selectAll("div")
 		.data(legendData)
 		.enter()
