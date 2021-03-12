@@ -54,6 +54,7 @@ function isInfected(node) {
 }
 
 function scatterplotOptionChanged(opt) {
+	
 	if (scatterplot) {
 		let mydata = [];
 		clusters.forEach((cluster, i) => {
@@ -140,8 +141,8 @@ function barSelectedCallback(d) {
 function loadBarChart() {
 
 	//
-	let opts = [{ "text": "Active Cases", "value": "cases" },
-	{ "text": "Active Cases Per Capita", "value": "casesPC" },
+	let opts = [{ "text": "Casos Ativos", "value": "cases" },
+	{ "text": "Casos Ativos Per Capita", "value": "casesPC" },
 	{ "text": "Salário médio mensal dos trabalhadores formais", "value": "salMedFor" },
 	{ "text": "IDH", "value": "idhm" },
 	{ "text": "Unidades de Saúde SUS", "value": "unidSus" },
@@ -171,10 +172,10 @@ function scatterPointSelected(id) {
 		//{lat: 51.49901887040356, lng: -0.08342742919921876}
 		let suffix = (selCluster.infected) ? 'Force of Infection: ' + selCluster.forceOfInfection.toFixed(3) : 'Risk Exposure: ' + selCluster.riskExposure.toFixed(3);
 		selectedPopup.setLatLng({ lat: node.lat, lng: node.lng })
-			.setContent("Selected cluster " + "</br>" +
-				"Size: " + selCluster.size + "</br>" +
-				"Population: " + selCluster.population +
-				"Active Cases: " + selCluster.activeCases + "</br>" +
+			.setContent("Cluster selecionado " + "</br>" +
+				"No Municípios: " + selCluster.size + "</br>" +
+				"População: " + selCluster.population +
+				"Casos Ativos: " + selCluster.activeCases + "</br>" +
 				suffix
 			)
 			.openOn(map);
@@ -184,14 +185,14 @@ function scatterPointSelected(id) {
 }
 
 function loadScatterplot() {
-	let opts = [{ "text": "Active Cases", "value": "cases" },
-	{ "text": "Active Cases Per Capita", "value": "casesPC" },
-	{ "text": "Population", "value": "population" },
-	{ "text": "Risk Exposure", "value": "riskExposure" },
-	{ "text": "Force of Infection", "value": "foi" },
+	let opts = [{ "text": "Casos Ativos", "value": "cases" },
+	{ "text": "Casos Ativos Per Capita", "value": "casesPC" },
+	{ "text": "População", "value": "population" },
+	{ "text": "Exposição ao Risco", "value": "riskExposure" },
+	{ "text": "Força da Infecção", "value": "foi" },
 	{ "text": "Salário médio mensal dos trabalhadores formais", "value": "salMedFor" },
 	{ "text": "IDH", "value": "idhm" },
-	{ "text": "Unidades de Saúde SUS", "value": "unidSus" },
+	{ "text": "No Unidades de Saúde SUS", "value": "unidSus" },
 	{ "text": "População ocupada (%)", "value": "popOcup" },
 	{ "text": "PIB per capita", "value": "pibPC" },
 	{ "text": "Pop. com rendimento menor 1/2 salário", "value": "popRendNom" }
@@ -537,7 +538,7 @@ function loadInterface() {
 		{ "value": "casesPC", "text": "Active Cases Per Capita" },
 		{ "text": "Salário médio mensal dos trabalhadores formais", "value": "salMedFor" },
 		{ "text": "IDH", "value": "idhm" },
-		{ "text": "Unidades de Saúde SUS", "value": "unidSus" },
+		{ "text": "No Unidades de Saúde SUS", "value": "unidSus" },
 		{ "text": "População ocupada (%)", "value": "popOcup" },
 		{ "text": "PIB per capita", "value": "pibPC" },
 		{ "text": "Pop. com rendimento menor 1/2 salário", "value": "popRendNom" }
@@ -589,7 +590,7 @@ function loadInterface() {
 
 
 	//////// MAP
-	map = L.map('map').setView([-8.07792545411762, -34.89995956420899], 12);
+	map = L.map('map').setView([-9.069551294233216, -39.12231445312501], 7);
 
 	var Stadia_AlidadeSmooth = L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png', {
 		maxZoom: 20,
@@ -631,6 +632,32 @@ function loadInterface() {
 		});
 	}
 
+	//
+	var credits = L.control({ position: 'bottomleft' });
+	credits.onAdd = function(){
+		var div = L.DomUtil.create('div', 'info legend');
+		div.setAttribute("id", "creditsDiv");
+		return div;
+	};
+	credits.addTo(map);
+	d3.select("#creditsDiv")
+	.append("a")
+	.attr("href","http://www.cin.ufpe.br/")
+	.attr("target","_blank")
+		.append("img")
+		.attr("height",50)
+		.attr("src","../data/cinLogo.png");
+
+	
+	d3.select("#creditsDiv")
+		.append("img")
+		.attr("height",30)
+		.attr("src","../data/inlocoLogo.png");
+
+	d3.select("#creditsDiv")
+		.append("div")
+		.append("text");
+
 	//legend
 	var legend = L.control({ position: 'bottomright' });
 	legend.onAdd = function (map) {
@@ -659,6 +686,9 @@ function loadInterface() {
 
 	//
 	updateThreshold();
+
+	//
+	scatterplotOptionChanged(["casesPC", "unidSus", "Casos Ativos Per Capita", "No Unidades de Saúde SUS"]);
 }
 
 function connectedComponents(adj) {
@@ -886,7 +916,7 @@ function updateDate() {
 		node['est_active_cases'] = estimateCasesByDate[name][currentDate];
 		//
 		let circle = nodeMarkers[name];
-		circle.bindPopup('Name: ' + node.name + '</br>' + 'Active Cases: ' + node.active_cases + '</br>' + 'Estimated Active Cases: ' + node.est_active_cases);
+		circle.bindPopup('Nome: ' + node.name + '</br>' + 'Casos ativos: ' + node.active_cases + '</br>' + 'Casos Ativos Estimados: ' + node.est_active_cases);
 	}
 	updateThreshold();
 	barChartOptionChanged(barChart.getSelectedOption());

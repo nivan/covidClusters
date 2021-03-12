@@ -86,6 +86,11 @@
                         color: #777;
                 }
 
+                #creditsDiv img{
+                        padding: 6px 8px;
+                        vertical-align: middle;   
+                }
+
                 .legend {
                         line-height: 18px;
                         color: #555;
@@ -98,6 +103,12 @@
                         margin-right: 8px;
                         opacity: 0.7;
                 }
+
+                .vl {
+                        border-left: 6px solid green;
+                        height: 100%;
+                }
+
 
                 /* Too narrow to support three columns */
                 @media all and (max-width: 640px) {
@@ -148,32 +159,32 @@
                                         <select name="colorByMenu" id="colorSelect">
                                         </select>
 
-                                        <label for="dateByMenu">Current Date:</label>
+                                        <label for="dateByMenu">Data:</label>
                                         <select name="dateByMenu" id="dateSelect"></select>
                                         </br>
 
                                         <label>
                                                 <input type="checkbox" id="singletonsCB" class="filled-in"
                                                         name="singletonCB" checked></input>
-                                                <span>Show Singletons</span>
+                                                <span>Mostrar Municípios Isolados</span>
                                         </label>
 
                                         <label>
                                                 <input type="checkbox" id="polygonsCB" class="filled-in"
                                                         name="polygonCB">
-                                                <span>Show Polygons</span>
+                                                <span>Mostrar Polígonos dos Clusters</span>
                                         </label>
 
                                         <label>
                                                 <input type="checkbox" id="graphCB" class="filled-in" name="graphCB"
                                                         checked>
-                                                <span>Show graph</span>
+                                                <span>Mostrar Grafo de Mobilidade</span>
                                         </label>
 
                                         <label>
                                                 <input type="checkbox" id="showBoundariesCB" class="filled-in"
                                                         name="showBoundariesCB" checked>
-                                                <span>Show Boundaries</span>
+                                                <span>Mostrar Municípios</span>
                                         </label>
 
                                         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -181,6 +192,7 @@
                                 </div>
                         </header>
                         <div id="map"></div>
+                        
                 </article>
 
                 <aside>
@@ -189,6 +201,9 @@
                         </br>
                         <div id="scatterDiv" class="two_two"></div>
                 </aside>
+
+                <div id="footer"></div>
+
         </div>
         <script src="../lib/d3.v5.min.js"></script>
         <script src="../lib/turf.min.js"></script>
