@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8" />
+
+<head>
+        <link rel="stylesheet" href="../css/leaflet.css">
+        </link>
+
+        <style>
+                #map {
+                        width: 100%;
+                        height: 90%;
+                }
+
+                body {
+                        background: #d3dadd;
+                }
+
+                #main {
+                        min-height: 800px;
+                        margin: 0px;
+                        padding: 0px;
+                        display: -webkit-flex;
+                        -webkit-flex-flow: row;
+                        flex-flow: row;
+                }
+
+                #main>article {
+                        margin: 4px;
+                        padding: 5px;
+                        border: 1px solid #ffffff;
+                        border-radius: 7pt;
+                        background: #ffffff;
+                        -webkit-flex: 3 1 70%;
+                        flex: 3 1 55%;
+                        -webkit-order: 2;
+                        order: 2;
+                }
+
+                #main>nav {
+                        margin: 4px;
+                        padding: 5px;
+                        border: 1px solid #8888bb;
+                        border-radius: 7pt;
+                        background: #ccccff;
+                        -webkit-flex: 1 6 20%;
+                        flex: 1 6 20%;
+                        -webkit-order: 1;
+                        order: 1;
+                }
+
+                #main>aside {
+                        margin: 4px;
+                        padding: 5px;
+                        border: 1px solid #8888bb;
+                        border-radius: 7pt;
+                        background: #ffffff;
+                        -webkit-flex: 1 6 30%;
+                        flex: 1 6 30%;
+                        -webkit-order: 3;
+                        order: 3;
+                }
+
+                header,
+                footer {
+                        display: block;
+                        margin: 4px;
+                        padding: 5px;
+                        min-height: 50px;
+                        border: 1px solid #000000;
+                        font: 12px Helvetica;
+                        background: #ffffff;
+                }
+
+                .info {
+                        padding: 6px 8px;
+                        font: 14px/16px Arial, Helvetica, sans-serif;
+                        background: white;
+                        background: rgba(255, 255, 255, 0.8);
+                        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+                        border-radius: 5px;
+                }
+
+                .info h4 {
+                        margin: 0 0 5px;
+                        color: #777;
+                }
+
+                #creditsDiv img{
+                        padding: 6px 8px;
+                        vertical-align: middle;   
+                }
+
+                .legend {
+                        line-height: 18px;
+                        color: #555;
+                }
+
+                .legend i {
+                        width: 18px;
+                        height: 16px;
+                        float: left;
+                        margin-right: 8px;
+                        opacity: 0.7;
+                }
+
+                .vl {
+                        border-left: 6px solid green;
+                        height: 100%;
+                }
+
+
+                /* Too narrow to support three columns */
+                @media all and (max-width: 640px) {
+
+                        #main,
+                        #page {
+                                -webkit-flex-flow: column;
+                                flex-flow: column;
+                        }
+
+                        #main>article,
+                        #main>nav,
+                        #main>aside {
+                                /* Return them to document order */
+                                -webkit-order: 0;
+                                order: 0;
+                        }
+
+                        #main>nav,
+                        #main>aside,
+                        header,
+                        footer {
+                                min-height: 50px;
+                                max-height: 50px;
+                                font: 15px Helvetica;
+                        }
+                }
+        </style>
+</head>
+
+<body>
+
+        <div id='main'>
+                <article>
+                        <header>
+                                <div class="controlsDiv">
+                                        <label for="thresholdSlider">
+                                                <span>Limiar de mobilidade:</span>
+                                                <input type="range" name="thresholdSlider" id="threshold" min="0"
+                                                        max="200" value="45">&nbsp;
+                                                <span for="thresholdSlider" id="thSliderValue"> 0%</span>
+
+
+                                        </label>
+                                        &nbsp;&nbsp;&nbsp;
+
+                                        <label for="colorByMenu">Colorir por:</label>
+                                        <select name="colorByMenu" id="colorSelect">
+                                        </select>
+
+                                        <label for="dateByMenu">Data:</label>
+                                        <select name="dateByMenu" id="dateSelect"></select>
+                                        </br>
+
+                                        <label>
+                                                <input type="checkbox" id="singletonsCB" class="filled-in"
+                                                        name="singletonCB" checked></input>
+                                                <span>Mostrar Municípios Isolados</span>
+                                        </label>
+
+                                        <label>
+                                                <input type="checkbox" id="polygonsCB" class="filled-in"
+                                                        name="polygonCB">
+                                                <span>Mostrar Polígonos dos Clusters</span>
+                                        </label>
+
+                                        <label>
+                                                <input type="checkbox" id="graphCB" class="filled-in" name="graphCB"
+                                                        checked>
+                                                <span>Mostrar Grafo de Mobilidade</span>
+                                        </label>
+
+                                        <label>
+                                                <input type="checkbox" id="showBoundariesCB" class="filled-in"
+                                                        name="showBoundariesCB" checked>
+                                                <span>Mostrar Municípios</span>
+                                        </label>
+
+                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+                                </div>
+                        </header>
+                        <div id="map"></div>
+                        
+                </article>
+
+                <aside>
+                        <div id="barchartDiv" class="two_one"></div>
+                        </br>
+                        </br>
+                        <div id="scatterDiv" class="two_two"></div>
+                </aside>
+
+                <div id="footer"></div>
+
+        </div>
+        <script src="../lib/d3.v5.min.js"></script>
+        <script src="../lib/turf.min.js"></script>
+        <script src="../lib/leaflet.js"></script>
+        <script src="../lib/leaflet.polylineDecorator.js"></script>
+        <script src="../lib/RowChart.js"></script>
+        <script src="../lib/BarChartWidget.js"></script>
+        <script src="../lib/scat.js"></script>
+        <script src="../lib/ScatterplotWidget.js"></script>
+        <script src="../data/graphCities.js"></script>
+        <script src="../data/boundariesMunPE.js"></script>
+
+        <script src="main.js"></script>
+</body>
+
+</html>
