@@ -19,4 +19,7 @@ scientific recommendations to policymakers. Our analysis shows how a policymaker
 isolation scenarios considering the trade-off between economic activity and the pandemic's spread, where the practical insights can also
 be used in a future outbreak.
 
-## How to use the data
+## How to setup the tool for your region
+
+After cloning the project it is necessary to import the datasets necessary for your analysis. The following data needs to be provided:
+
