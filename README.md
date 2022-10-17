@@ -22,12 +22,12 @@ be used in a future outbreak.
 ## How to setup the tool for your region
 
 After cloning the project, the user can create and configure an application and import the required datasets. Here, the bairrosRecife 
-application (https://nivan.github.io/covidClusters/bairrosRecife/) will be used as an example. In general, each application is constituted of two files: 
+application (https://nivan.github.io/covidClusters/bairrosRecife/) will be used as an example. Each application is constituted of two files: 
 
 - index.html: mainly used to import libraries and datasets 
 - main.js: contains the code of the multiple coordinated views widgets. 
 
-It is also necessary to create a 'data' directory containing the required datasets. In general, our approach requires two datasets:
+It is also necessary to create a 'data' directory containing the required datasets (Note that a data directory already exists in this repository). Our approach requires two datasets:
 
 - **Boundaries of a location (BoL)**: Each location have geographical boundaries defined by a polygon, which constitute basic types of the leaflet map. For the 
   bairrosRecife application, /data/boundariesBairros.js contains the boundaries of each district of Recife. This dataset is included in the index.html as 
