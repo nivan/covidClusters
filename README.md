@@ -29,8 +29,8 @@ application (https://nivan.github.io/covidClusters/bairrosRecife/) will be used 
 
 It is also necessary to create a 'data' directory containing the required datasets. In general, our approach requires two datasets:
 
-- **Boundaries of a location**: Each location have geographical boundaries defined by a polygon. For the bairrosRecife application, 
-  /data/boundariesBairros.js   contains the boundaries of each district of Recife. This dataset is included in the index.html as 
+- **Boundaries of a location**: Each location have geographical boundaries defined by a polygon, which constitute basic types of the leaflet map. For the 
+  bairrosRecife application, /data/boundariesBairros.js contains the boundaries of each district of Recife. This dataset is included in the index.html as 
   <script src="../data/boundariesBairros.js"></script>.
 - **Location variables**: Each location contains mobility, socioeconomic, demographic and epidemiological variables (MSDE). For the bairrosRecife application, 
   /data/boundariesBairros.js contains the MSDE variables of each district of Recife. This dataset is included in the index.html as 
