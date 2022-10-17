@@ -29,12 +29,15 @@ application (https://nivan.github.io/covidClusters/bairrosRecife/) will be used 
 
 It is also necessary to create a 'data' directory containing the required datasets. In general, our approach requires two datasets:
 
-- **Boundaries of a location**: Each location have geographical boundaries defined by a polygon, which constitute basic types of the leaflet map. For the 
+- **Boundaries of a location (BoL)**: Each location have geographical boundaries defined by a polygon, which constitute basic types of the leaflet map. For the 
   bairrosRecife application, /data/boundariesBairros.js contains the boundaries of each district of Recife. This dataset is included in the index.html as 
   <script src="../data/boundariesBairros.js"></script>.
-- **Location variables**: Each location contains mobility, socioeconomic, demographic and epidemiological variables (MSDE). For the bairrosRecife application, 
-  /data/boundariesBairros.js contains the MSDE variables of each district of Recife. This dataset is included in the index.html as 
-  <script src="../data/boundariesBairros.js"></script>.
-  
- The final step is to update the centroid and zoom properties of the leaflet map, according to the region that is being studied.
+- **Location variables (LV)**: Each location contains mobility, socioeconomic, demographic and epidemiological variables (MSDE). For the bairrosRecife application, 
+  /data/graphBairrosEcon3.js contains the MSDE variables of each district of Recife. This dataset is included in the index.html as 
+  <script src="../data/graphBairrosEcon3.js"></script>.
+ 
+ The name of the locations must be the same in both 'BoL' and 'LV' files. It is necessary to configure the variable names to integrate the Location variables  dataset and the main.js code. This will require that the user modify the code in the 'buildCoords()' function of the main.js script.
+ 
+ The final step is to update the central coordinates and zoom properties of the leaflet map, according to the region that is being studied. This can be configured
+ in the 'loadInterface()' function of the main.js script.
 
