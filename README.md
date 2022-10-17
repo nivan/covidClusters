@@ -26,13 +26,14 @@ After cloning the project, it is necessary to import the required datasets. Here
 - index.html: mainly used to import libraries and datasets 
 - main.js: contains the code of the multiple coordinate views widgets. 
 
-In general, our approach requires two datasets:
+It is also necessary to create a 'data' directory containing the required datasets. In general, our approach requires two datasets:
 
-- **Boundaries of a location**: Each location have geographical boundaries defined by a polygon. For the bairrosRecife application, /data/boundariesBairros.js contains
-  the boundaries of each district of Recife. This dataset is included in the index.html as <script src="../data/boundariesBairros.js"></script>.
+- **Boundaries of a location**: Each location have geographical boundaries defined by a polygon. For the bairrosRecife application, 
+  /data/boundariesBairros.js   contains the boundaries of each district of Recife. This dataset is included in the index.html as 
+  <script src="../data/boundariesBairros.js"></script>.
 - **Location variables**: Each location contains mobility, socioeconomic, demographic and epidemiological variables (MSDE). For the bairrosRecife application, 
-  /data/boundariesBairros.js contains the MSDE variables of each district of Recife. This dataset is included in the index.html as <script   
-  src="../data/boundariesBairros.js"></script>.
+  /data/boundariesBairros.js contains the MSDE variables of each district of Recife. This dataset is included in the index.html as 
+  <script src="../data/boundariesBairros.js"></script>.
   
  The final step is to update the centroid and zoom properties of the leaflet map, according to the region that is being studied.
 
