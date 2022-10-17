@@ -21,7 +21,8 @@ be used in a future outbreak.
 
 ## How to setup the tool for your region
 
-After cloning the project, it is necessary to import the required datasets. Here, the data of bairrosRecife application (https://nivan.github.io/covidClusters/bairrosRecife/) will be used as an example. Each application needs two files: 
+After cloning the project, it is necessary to configure and application and import the required datasets. Here, the data of bairrosRecife 
+application (https://nivan.github.io/covidClusters/bairrosRecife/) will be used as an example. Each application needs two files: 
 
 - index.html: mainly used to import libraries and datasets 
 - main.js: contains the code of the multiple coordinate views widgets. 
