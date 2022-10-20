@@ -1,7 +1,7 @@
 
 Project D.A.D.O. (Data and Analysis for Decisions and Operations) was developed in partnership with Prefeitura do Recife and 
 Porto Digital to support the development of Business Intelligence and Analytics strategies in the fight against the pandemic. The
-working groups, formed by researchers, engineers and epidemiologists, had the support of companies in Porto Digital, such as Incognia and Neurotech.
+working groups, formed by researchers, engineers and epidemiologists, had the support of companies in Porto Digital, such as In Loco and Neurotech.
 
 ## Description
 
